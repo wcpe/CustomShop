@@ -1,0 +1,11 @@
+name: CustomShop
+version: 1.1
+main: com.killercraft.jimy.CustomShop
+commands:
+  cshop:
+depend:
+  - Vault
+  - ProtocolLib
+softdepend:
+  - PlayerPoints
+  - PlaceholderAPI
