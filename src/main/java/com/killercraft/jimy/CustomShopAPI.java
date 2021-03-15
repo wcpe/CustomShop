@@ -50,11 +50,7 @@ public class CustomShopAPI {
     返回 int 为该货币余额
     */
     public static int checkCost(String name,String costId){
-        if(!enableMySQL) {
-            return CSCostUtil.checkCost(name, costId);
-        }else{
-            return csb.selectPlayerData(name).getOrDefault(costId,0);
-        }
+        return CSCostUtil.checkCost(name, costId);
     }
 
     /*
@@ -140,19 +136,17 @@ public class CustomShopAPI {
     清理现所有玩家的数据中的指定货币id的数量
     */
     public static void clearCost(String costId){
-        if(!enableMySQL) {
-            Iterator<Map.Entry<String, HashMap<String, Integer>>> it1 = playerData.entrySet().iterator();
-            while (it1.hasNext()) {
-                Map.Entry<String, HashMap<String, Integer>> e1 = it1.next();
-                HashMap<String, Integer> map1 = e1.getValue();
-                map1.entrySet().removeIf(e2 -> e2.getKey().equalsIgnoreCase(costId));
-                if (map1.size() < 1) {
-                    it1.remove();
-                } else {
-                    e1.setValue(map1);
-                }
+        Iterator<Map.Entry<String, HashMap<String, Integer>>> it1 = playerData.entrySet().iterator();
+        while (it1.hasNext()) {
+            Map.Entry<String, HashMap<String, Integer>> e1 = it1.next();
+            HashMap<String, Integer> map1 = e1.getValue();
+            map1.entrySet().removeIf(e2 -> e2.getKey().equalsIgnoreCase(costId));
+            if (map1.size() < 1) {
+                it1.remove();
+            } else {
+                e1.setValue(map1);
             }
-        }else csb.clearCost(costId);
+        }
     }
 
     /*

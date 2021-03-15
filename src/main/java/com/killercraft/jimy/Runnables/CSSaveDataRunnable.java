@@ -12,5 +12,6 @@ public class CSSaveDataRunnable implements Runnable{
         saveShops();
         day = Calendar.getInstance().get(Calendar.DAY_OF_YEAR);
         saveRefresh();
+        saveLimits();
     }
 }

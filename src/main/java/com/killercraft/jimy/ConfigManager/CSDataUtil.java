@@ -40,7 +40,9 @@ public class CSDataUtil {
         }
     }
 
+
     public static void saveRefresh(){
+        if(enableMySQL) return;
         File file = new File(CustomShop.root, "refresh.yml");
         FileConfiguration ref = load(file);
         for (String name : ref.getKeys(false)) {
@@ -72,7 +74,29 @@ public class CSDataUtil {
         }
     }
 
+    public static void saveLimits(){
+        if(enableMySQL) return;
+        File file = new File(CustomShop.root, "playerlimits.yml");
+        FileConfiguration limits = load(file);
+        for(String temp:limits.getKeys(false)){
+            limits.set(temp,null);
+        }
+        for(String pName:limitData.keySet()){
+            HashMap<String,Integer> map = limitData.get(pName);
+            if(map.isEmpty()) continue;
+            for(String key:map.keySet()){
+                limits.set(pName+"."+key,map.get(key));
+            }
+        }
+        try {
+            limits.save(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void saveShops(){
+        if(enableMySQL) return;
         File file = new File(CustomShop.root, "shops.yml");
         FileConfiguration shops = load(file);
         for(String temp:shops.getKeys(false)){
@@ -96,6 +120,21 @@ public class CSDataUtil {
             shops.save(file);
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+
+    public static void loadLimits(){
+        File file = new File(CustomShop.root, "playerlimits.yml");
+        FileConfiguration limits = load(file);
+        limitData = new HashMap<>();
+        for(String temp:limits.getKeys(false)){
+            HashMap<String,Integer> map = new HashMap<>();
+            ConfigurationSection sec = limits.getConfigurationSection(temp);
+            for(String key:sec.getKeys(false)){
+                map.put(key,sec.getInt(key));
+            }
+            limitData.put(temp,map);
         }
     }
 

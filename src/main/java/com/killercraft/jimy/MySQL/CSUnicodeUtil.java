@@ -2,6 +2,7 @@ package com.killercraft.jimy.MySQL;
 
 public class CSUnicodeUtil {
     public static String toUnicode(final String gbString) {
+        if(gbString.contains("#")) return gbString;
         char[] utfBytes = gbString.toCharArray();
         String unicodeBytes = "";
         for (int byteIndex = 0; byteIndex < utfBytes.length; byteIndex++) {

@@ -8,7 +8,6 @@ public class CustomShopSQLUpdate implements Runnable {
     public void run() {
         if(enableMySQL) {
             costMap = csb.getCosts();
-            hookPlayerData = csb.selectAllPlayerData();
         }
     }
 }

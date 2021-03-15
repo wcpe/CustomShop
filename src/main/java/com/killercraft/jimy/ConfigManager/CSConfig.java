@@ -22,6 +22,34 @@ public class CSConfig {
     public static void update(){
         File file = new File(CustomShop.root, "config.yml");
         FileConfiguration config = load(file);
+        boolean save = false;
+        String checkStr = config.getString("Lang.InvCheckString");
+        if(checkStr == null){
+            config.set("Lang.InvCheckString","&7>> &c背包剩余&7[<value>&7]空格");
+            save = true;
+        }
+        checkStr = config.getString("Lang.PAPICheckString");
+        if(checkStr == null){
+            config.set("Lang.PAPICheckString","&7>> &c<text>");
+            save = true;
+        }
+        checkStr = config.getString("Lang.StrCheckString");
+        if(checkStr == null){
+            config.set("Lang.StrCheckString","&7>> &c<text>");
+            save = true;
+        }
+        checkStr = config.getString("Lang.PlayerLimit");
+        if(checkStr == null){
+            config.set("Lang.PlayerLimit","&7>> &c您还可购买: &b<value> &c次");
+            save = true;
+        }
+        if(save){
+            try {
+                config.save(file);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         ConfigurationSection langs = config.getConfigurationSection("Lang");
         langMap = new HashMap<>();
         for(String temp:langs.getKeys(false)){
@@ -41,6 +69,7 @@ public class CSConfig {
             csb.username = config.getString("MySQLUsername");
             csb.password = config.getString("MySQLPassword");
             csb.databaseName = config.getString("MySQLDatabase");
+            csb.useSSL = config.getBoolean("MySQLUseSSL");
             try {
                 if(csb.getConnection() == null) enableMySQL = false;
                 csb.createCostsTable();
@@ -51,10 +80,12 @@ public class CSConfig {
                 e.printStackTrace();
                 enableMySQL = false;
             }
+        }else {
+            loadData();
+            loadShops();
+            loadRefresh();
+            loadLimits();
         }
-        loadData();
-        loadShops();
-        loadRefresh();
     }
 
     public static FileConfiguration load(File file) {

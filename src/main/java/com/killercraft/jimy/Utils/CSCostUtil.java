@@ -7,14 +7,32 @@ import org.bukkit.scheduler.BukkitScheduler;
 import java.util.HashMap;
 
 import static com.killercraft.jimy.CustomShop.*;
-import static com.killercraft.jimy.MySQL.CustomShopDatabase.enableMySQL;
 
 public class CSCostUtil {
 
-    private static BukkitScheduler bk = Bukkit.getScheduler();
+    //private static BukkitScheduler bk = Bukkit.getScheduler();
 
     public static String giveCost(String name,String costId,int i){
-        if(enableMySQL){
+        if (playerData.containsKey(name)) {
+            HashMap<String, Integer> pCosts = playerData.get(name);
+            if (costMap.containsKey(costId)) {
+                if (pCosts.containsKey(costId)) {
+                    pCosts.put(costId, pCosts.get(costId) + i);
+                } else {
+                    pCosts.put(costId, i);
+                }
+                playerData.put(name, pCosts);
+                return langMap.get("AddCost").replace("<cost>", costMap.get(costId)).replace("<value>", pCosts.getOrDefault(costId, 0) + "");
+            } else return langMap.get("CostLose");
+        } else {
+            if (costMap.containsKey(costId)) {
+                HashMap<String, Integer> pCosts = new HashMap<>();
+                pCosts.put(costId, i);
+                playerData.put(name, pCosts);
+                return langMap.get("AddCost").replace("<cost>", costMap.get(costId)).replace("<value>", pCosts.getOrDefault(costId, 0) + "");
+            } else return langMap.get("CostLose");
+        }
+        /*if(enableMySQL){
             bk.runTaskAsynchronously(plugin, () -> {
                 HashMap<String,Integer> costs = csb.selectPlayerData(name);
                 HashMap<String,String> nowCosts = csb.getCosts();
@@ -54,11 +72,24 @@ public class CSCostUtil {
                     return langMap.get("AddCost").replace("<cost>", costMap.get(costId)).replace("<value>", pCosts.getOrDefault(costId, 0) + "");
                 } else return langMap.get("CostLose");
             }
-        }
+        }*/
     }
 
     public static boolean takeCost(String name,String costId,int i){
-        if(!enableMySQL) {
+        if (playerData.containsKey(name)) {
+            HashMap<String, Integer> pCosts = playerData.get(name);
+            if (costMap.containsKey(costId)) {
+                if (pCosts.containsKey(costId)) {
+                    int left = pCosts.get(costId) - i;
+                    if (left >= 0) {
+                        pCosts.put(costId, left);
+                        playerData.put(name, pCosts);
+                        return true;
+                    }else return false;
+                } else return false;
+            } else return false;
+        } else return false;
+        /*if(!enableMySQL) {
             if (playerData.containsKey(name)) {
                 HashMap<String, Integer> pCosts = playerData.get(name);
                 if (costMap.containsKey(costId)) {
@@ -81,12 +112,24 @@ public class CSCostUtil {
                     return true;
                 }else return false;
             } else return false;
-        }
+        }*/
     }
 
 
     public static String delCost(String name,String costId,int i){
-        if(enableMySQL){
+        if (playerData.containsKey(name)) {
+            HashMap<String, Integer> pCosts = playerData.get(name);
+            if (costMap.containsKey(costId)) {
+                if (pCosts.containsKey(costId)) {
+                    int left = pCosts.get(costId) - i;
+                    if (left < 0) left = 0;
+                    pCosts.put(costId, left);
+                    playerData.put(name, pCosts);
+                    return langMap.get("DelCost").replace("<cost>", costMap.get(costId)).replace("<value>", pCosts.getOrDefault(costId, 0) + "");
+                } else return langMap.get("DelCost").replace("<cost>", costMap.get(costId)).replace("<value>", 0 + "");
+            } else return langMap.get("CostLose");
+        } else return langMap.get("DelCost").replace("<cost>", costMap.get(costId)).replace("<value>", 0 + "");
+        /*if(enableMySQL){
             bk.runTaskAsynchronously(plugin, () -> {
                 HashMap<String,Integer> costs = csb.selectPlayerData(name);
                 HashMap<String,String> nowCosts = csb.getCosts();
@@ -118,18 +161,16 @@ public class CSCostUtil {
                     } else return langMap.get("DelCost").replace("<cost>", costMap.get(costId)).replace("<value>", 0 + "");
                 } else return langMap.get("CostLose");
             } else return langMap.get("DelCost").replace("<cost>", costMap.get(costId)).replace("<value>", 0 + "");
-        }
+        }*/
     }
 
     public static int checkCost(String name,String costId){
-        if(enableMySQL) {
-            if (playerData.containsKey(name)) {
-                HashMap<String, Integer> pCosts = playerData.get(name);
-                if (pCosts.containsKey(costId)) {
-                    return pCosts.get(costId);
-                }
+        if (playerData.containsKey(name)) {
+            HashMap<String, Integer> pCosts = playerData.get(name);
+            if (pCosts.containsKey(costId)) {
+                return pCosts.get(costId);
             }
-        }else return csb.selectPlayerData(name).getOrDefault(costId,0);
+        }
         return 0;
     }
 }

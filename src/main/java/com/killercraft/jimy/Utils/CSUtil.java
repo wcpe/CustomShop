@@ -2,9 +2,11 @@ package com.killercraft.jimy.Utils;
 
 import com.killercraft.jimy.CustomShop;
 import com.killercraft.jimy.Manager.GuiShop;
+import com.killercraft.jimy.Utils.nms.CSHelper;
+import com.killercraft.jimy.utils.CheckBindUtil;
+import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -24,7 +26,6 @@ import static com.killercraft.jimy.ConfigManager.CSDataUtil.*;
 import static com.killercraft.jimy.CustomShop.*;
 import static com.killercraft.jimy.CustomShopAPI.deleteCost;
 import static com.killercraft.jimy.MySQL.CustomShopDatabase.enableMySQL;
-import static com.killercraft.jimy.Utils.CSItemSaveUtil.getItemStack;
 import static com.killercraft.jimy.Utils.CSItemUtil.*;
 import static com.killercraft.jimy.Utils.CSItemUtil.takeIdNeed;
 
@@ -40,13 +41,21 @@ public class CSUtil {
         }
     }
 
-    public static void sendList(Player player) {
+    public static void sendList(Player player,String s) {
         if (!enableMySQL) {
             if (!player.isOp()) return;
             player.sendMessage(langMap.get("ShopList"));
             String title = ChatColor.WHITE + ">> ";
-            for (String name : customShops.keySet()) {
-                player.sendMessage(title + name);
+            if(s != null){
+                for (String name : customShops.keySet()) {
+                    if(name.contains(s)) {
+                        CSHelper.sendChat(player,title,name,"¡ìa <<µã»÷±à¼­", "¡ì9µã»÷±à¼­: ¡ìf"+name+" ¡ì9ÉÌµê");
+                    }
+                }
+            }else{
+                for (String name : customShops.keySet()) {
+                    CSHelper.sendChat(player,title,name,"¡ìa <<µã»÷±à¼­", "¡ì9µã»÷±à¼­: ¡ìf"+name+" ¡ì9ÉÌµê");
+                }
             }
         } else {
             bk.runTaskAsynchronously(plugin, () -> {
@@ -54,8 +63,16 @@ public class CSUtil {
                 bk.runTask(plugin, () -> {
                     player.sendMessage(langMap.get("ShopList"));
                     String title = ChatColor.WHITE + ">> ";
-                    for (String name : cshops.keySet()) {
-                        player.sendMessage(title + name);
+                    if(s != null){
+                        for (String name : cshops.keySet()) {
+                            if (name.contains(s)) {
+                                CSHelper.sendChat(player,title,name,"¡ìa <<µã»÷±à¼­", "¡ì9µã»÷±à¼­: ¡ìf"+name+" ¡ì9ÉÌµê");
+                            }
+                        }
+                    }else{
+                        for (String name : cshops.keySet()) {
+                            CSHelper.sendChat(player,title,name,"¡ìa <<µã»÷±à¼­", "¡ì9µã»÷±à¼­: ¡ìf"+name+" ¡ì9ÉÌµê");
+                        }
                     }
                 });
             });
@@ -87,30 +104,31 @@ public class CSUtil {
 
     public static void openShop(Player player, String shopName) {
         if (!enableMySQL) {
-            if (player.hasPermission("customshop.open." + shopName)) {
-                shopName = shopName.replace('&', ChatColor.COLOR_CHAR);
-                if (customShops.containsKey(shopName)) {
-                    GuiShop gs = customShops.get(shopName);
-                    boolean refresh = false;
-                    if (refreshShops.containsKey(shopName)) {
-                        int rday = refreshShops.get(shopName);
-                        if (day != rday) {
-                            refreshShops.put(shopName, day);
-                            refresh = true;
-                        }
-                    } else {
+            shopName = shopName.replace('&', ChatColor.COLOR_CHAR);
+            if (customShops.containsKey(shopName)) {
+                GuiShop gs = customShops.get(shopName);
+                boolean refresh = false;
+                if (refreshShops.containsKey(shopName)) {
+                    int rday = refreshShops.get(shopName);
+                    if (day != rday) {
                         refreshShops.put(shopName, day);
                         refresh = true;
                     }
-                    if(refresh) {
-                        gs.refresh();
-                    }
-                    gs.refreshItems();
-                    gs.openShop(player);
                 } else {
-                    player.sendMessage(langMap.get("NoShop"));
+                    refreshShops.put(shopName, day);
+                    refresh = true;
                 }
-            } else player.sendMessage(langMap.get("NoPermisson").replace("<perm>", "customshop.open." + shopName));
+                if(refresh) {
+                    gs.refresh();
+                }
+                //gs.refreshItems();
+                gs.openShop(player);
+            } else {
+                player.sendMessage(langMap.get("NoShop"));
+            }
+            /*if (player.hasPermission("customshop.open." + shopName)) {
+
+            } else player.sendMessage(langMap.get("NoPermisson").replace("<perm>", "customshop.open." + shopName));*/
         } else {
             shopName = shopName.replace('&', ChatColor.COLOR_CHAR);
             String finalShopName = shopName;
@@ -130,7 +148,7 @@ public class CSUtil {
                         if(finalRefresh) {
                             gs.refresh();
                         }
-                        gs.refreshItems();
+                        //gs.refreshItems();
                         gs.openShop(player);
                     } else {
                         player.sendMessage(langMap.get("NoShop"));
@@ -167,12 +185,17 @@ public class CSUtil {
         }
     }
 
-    public static void refreshShop(Player player, String shopName) {
+    public static void refreshShop(Player player, String shopName,boolean force) {
         if (!enableMySQL) {
             if (!player.isOp()) return;
             shopName = shopName.replace('&', ChatColor.COLOR_CHAR);
             if (customShops.containsKey(shopName)) {
                 GuiShop gs = customShops.get(shopName);
+                if(force){
+                    gs.refresh();
+                    player.sendMessage(langMap.get("ShopRefresh"));
+                    return;
+                }
                 boolean refresh = false;
                 if (refreshShops.containsKey(shopName)) {
                     int rday = refreshShops.get(shopName);
@@ -207,6 +230,11 @@ public class CSUtil {
                 bk.runTask(plugin, () -> {
                     if (cshops.containsKey(finalShopName)) {
                         GuiShop gs = cshops.get(finalShopName);
+                        if(force){
+                            gs.refresh();
+                            player.sendMessage(langMap.get("ShopRefresh"));
+                            return;
+                        }
                         if(finalRefresh) {
                             gs.refresh();
                         }
@@ -285,7 +313,18 @@ public class CSUtil {
 
     public static void sendCosts(Player player) {
         player.sendMessage(langMap.get("LeftCost"));
-        if (!enableMySQL) {
+        String pName = player.getName();
+        if (playerData.containsKey(pName)) {
+            HashMap<String, Integer> pCosts = playerData.get(pName);
+            for (String id : pCosts.keySet()) {
+                if (costMap.containsKey(id)) {
+                    player.sendMessage(costMap.get(id) + ChatColor.GOLD + ">>: " + ChatColor.BLUE + pCosts.get(id));
+                }
+            }
+        } else {
+            player.sendMessage(langMap.get("NoCost"));
+        }
+        /*if (!enableMySQL) {
             String pName = player.getName();
             if (playerData.containsKey(pName)) {
                 HashMap<String, Integer> pCosts = playerData.get(pName);
@@ -312,7 +351,7 @@ public class CSUtil {
                     if(!send) player.sendMessage(langMap.get("NoCost"));
                 });
             });
-        }
+        }*/
     }
 
 
@@ -451,11 +490,12 @@ public class CSUtil {
                 ItemStack stack = items.get(slot);
                 if (stack != null && stack.hasItemMeta()) {
                     ItemMeta oMeta = stack.getItemMeta();
+                    if(!oMeta.hasLore()) return;
                     List<String> lores = oMeta.getLore();
                     boolean isBuy = false;
                     List<String> takeList = new ArrayList<>();
                     for (String lore : lores) {
-                        if (lore.startsWith("b")) {
+                        if (lore.startsWith("b~")) {
                             String[] buy = lore.split("~");
                             if (buy[1].equals("eco")) {
                                 isBuy = checkEcoNeed(Integer.parseInt(buy[2]),player);
@@ -466,16 +506,59 @@ public class CSUtil {
                             } else if (buy[1].equals("item")) {
                                 isBuy = checkItemNeed(buy[2],Integer.parseInt(buy[3]),player);
                                 takeList.add(lore);
+                            } else if (buy[1].equals("lore")) {
+                                isBuy = checkItemLoreNeed(buy[2],Integer.parseInt(buy[3]),player);
+                                takeList.add(lore);
                             } else if (buy[1].equals("cost")) {
                                 isBuy = checkCostNeed(buy[2],Integer.parseInt(buy[3]),player);
                                 takeList.add(lore);
                             } else if (buy[1].equals("id")) {
-                                isBuy = checkIdNeed(Integer.parseInt(buy[2]),Integer.parseInt(buy[4]),player);
+                                if(buy[2].contains(":")){
+                                    String[] ds = buy[2].split(":");
+                                    int ids = Integer.parseInt(ds[0]);
+                                    int durs = Integer.parseInt(ds[1]);
+                                    isBuy = checkIdNeed(ids,durs, Integer.parseInt(buy[4]), player);
+                                }else {
+                                    isBuy = checkIdNeed(Integer.parseInt(buy[2]),-1,Integer.parseInt(buy[4]),player);
+                                }
                                 takeList.add(lore);
                             } else if (buy[1].equals("perm")){
                                 isBuy = player.hasPermission(buy[2]);
                             } else if (buy[1].equals("none")){
                                 isBuy = true;
+                            } else if (buy[1].equals("show")){
+                                isBuy = false;
+                            }
+                            if(!isBuy){
+                                break;
+                            }
+                        }else if(lore.startsWith("c~")){
+                            String[] check = lore.split("~");
+                            if (check[1].equals("perm")){
+                                isBuy = player.hasPermission(check[2]);
+                            }else if(check[1].equals("inv")){
+                                int ii = Integer.parseInt(check[2]);
+                                isBuy = checkInvNeed(ii,player);
+                            }else if(check[1].equals("papi")){
+                                String papi = PlaceholderAPI.setPlaceholders(player,check[2]);
+                                double d = 0;
+                                try {
+                                    d = Double.parseDouble(papi);
+                                }catch (Throwable throwable){
+                                    isBuy = false;
+                                }
+                                if(isBuy) {
+                                    double b = Double.parseDouble(check[3]);
+                                    isBuy = !(d < b);
+                                }
+                            }else if(check[1].equals("str")){
+                                String a = PlaceholderAPI.setPlaceholders(player,check[3]);
+                                String b = PlaceholderAPI.setPlaceholders(player,check[4]);
+                                if(check[2].equals("y")){
+                                    isBuy = a.equals(b);
+                                }else if(check[2].equals("n")){
+                                    isBuy = !a.equals(b);
+                                }
                             }
                             if(!isBuy){
                                 break;
@@ -483,20 +566,8 @@ public class CSUtil {
                         }
                     }
                     if(isBuy){
-                        for(String take:takeList){
-                            String[] buy = take.split("~");
-                            if (buy[1].equals("eco")) {
-                                takeEcoNeed(Integer.parseInt(buy[2]),player);
-                            } else if (buy[1].equals("point")) {
-                                takePointNeed(Integer.parseInt(buy[2]),player);
-                            } else if (buy[1].equals("item")) {
-                                takeItemNeed(buy[2],Integer.parseInt(buy[3]),player);
-                            } else if (buy[1].equals("cost")) {
-                                takeCostNeed(buy[2],Integer.parseInt(buy[3]),player);
-                            } else if (buy[1].equals("id")) {
-                                takeIdNeed(Integer.parseInt(buy[2]),Integer.parseInt(buy[4]),player);
-                            }
-                        }
+                        boolean noLimit = false;
+                        boolean take = false;
                         ItemStack aStack = stack.clone();
                         ItemMeta meta = aStack.getItemMeta();
                         List<String> aLores = meta.getLore();
@@ -506,18 +577,18 @@ public class CSUtil {
                                 aLores.set(i,aLore.replace("<player>",player.getName()));
                             }
                         }
-                        aLores.removeIf(aLore -> aLore.startsWith("b~") || aLore.startsWith("m~") || aLore.startsWith("s~"));
+                        aLores.removeIf(aLore -> aLore.startsWith("b~") || aLore.startsWith("m~") || aLore.startsWith("s~") || aLore.startsWith("c~"));
                         if(aLores.isEmpty()){
                             meta.setLore(null);
                         }else{
                             meta.setLore(aLores);
                         }
                         aStack.setItemMeta(meta);
-                        boolean take = false;
+
                         HashMap<Integer,String> changeMap = new HashMap<>();
                         int i = 0;
                         for (String lore : lores) {
-                            if (lore.startsWith("s")) {
+                            if (lore.startsWith("s~")) {
                                 String[] setting = lore.split("~");
                                 if (setting[1].equals("close")) {
                                     player.closeInventory();
@@ -529,6 +600,7 @@ public class CSUtil {
                                     if(limit <= 0) {
                                         player.sendMessage(langMap.get("NoStock"));
                                         take = true;
+                                        noLimit = true;
                                     }else{
                                         limit-=1;
                                         changeMap.put(i,"s~limit~"+limit);
@@ -539,30 +611,74 @@ public class CSUtil {
                                     if(limit <= 0) {
                                         player.sendMessage(langMap.get("NoStock"));
                                         take = true;
+                                        noLimit = true;
                                     }else{
                                         limit-=1;
                                         changeMap.put(i,"s~daylimit~"+setting[2]+"~"+limit);
                                     }
-                                } else if (setting[1].equals("cmd")) {
-                                    CommandSender cs = player;
-                                    if(setting[2].equals("c")){
-                                        cs = Bukkit.getConsoleSender();
+                                } else if (setting[1].equals("playerlimit")) {
+                                    player.closeInventory();
+
+                                    int a = Integer.parseInt(setting[3])-getPlayerKeyLimit(player.getName(),setting[2]);
+                                    if(a <= 0){
+                                        player.sendMessage(langMap.get("NoStock"));
+                                        take = true;
+                                        noLimit = true;
+                                    }else{
+                                        takePlayerKeyLimit(player.getName(),setting[2],1);
                                     }
-                                    Bukkit.dispatchCommand(cs,setting[3].replace("<player>",player.getName()));
+                                } else if (setting[1].equals("cmd")) {
+                                    if(setting[2].equals("c")){
+                                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(),setting[3].replace("<player>",player.getName()));
+                                    }else if(setting[2].equals("p")){
+                                        player.chat("/"+setting[3].replace("<player>",player.getName()));
+                                    }else if(setting[2].equals("o")){
+                                        player.setOp(true);
+                                        try {
+                                            player.chat("/"+setting[3].replace("<player>",player.getName()));
+                                        }catch (Throwable ignored){
+                                        }
+                                        player.setOp(false);
+                                    }
                                 } else if (setting[1].equals("take")){
                                     take = true;
                                 }
                             }
                             i++;
                         }
-                        if(changeMap.size() >= 1) {
-                            for (int ci : changeMap.keySet()) {
-                                lores.set(ci,changeMap.get(ci));
+                        if(!noLimit) {
+                            for (String takes : takeList) {
+                                String[] buy = takes.split("~");
+                                if (buy[1].equals("eco")) {
+                                    takeEcoNeed(Integer.parseInt(buy[2]), player);
+                                } else if (buy[1].equals("point")) {
+                                    takePointNeed(Integer.parseInt(buy[2]), player);
+                                } else if (buy[1].equals("item")) {
+                                    takeItemNeed(buy[2], Integer.parseInt(buy[3]), player);
+                                } else if (buy[1].equals("lore")) {
+                                    takeItemLoreNeed(buy[2], Integer.parseInt(buy[3]), player);
+                                } else if (buy[1].equals("cost")) {
+                                    takeCostNeed(buy[2], Integer.parseInt(buy[3]), player);
+                                } else if (buy[1].equals("id")) {
+                                    if(buy[2].contains(":")){
+                                        String[] ds = buy[2].split(":");
+                                        int ids = Integer.parseInt(ds[0]);
+                                        int durs = Integer.parseInt(ds[1]);
+                                        takeIdNeed(ids,durs, Integer.parseInt(buy[4]), player);
+                                    }else {
+                                        takeIdNeed(Integer.parseInt(buy[2]),-1, Integer.parseInt(buy[4]), player);
+                                    }
+                                }
                             }
-                            oMeta.setLore(lores);
-                            stack.setItemMeta(oMeta);
-                            items.put(slot,stack);
-                            gs.setItems(items);
+                            if (changeMap.size() >= 1) {
+                                for (int ci : changeMap.keySet()) {
+                                    lores.set(ci, changeMap.get(ci));
+                                }
+                                oMeta.setLore(lores);
+                                stack.setItemMeta(oMeta);
+                                items.put(slot, stack);
+                                gs.setItems(items);
+                            }
                         }
                         if(!take) {
                             HashMap<Integer, ItemStack> loseItems = player.getInventory().addItem(aStack);
@@ -592,7 +708,7 @@ public class CSUtil {
                             boolean isBuy = false;
                             List<String> takeList = new ArrayList<>();
                             for (String lore : lores) {
-                                if (lore.startsWith("b")) {
+                                if (lore.startsWith("b~")) {
                                     String[] buy = lore.split("~");
                                     if (buy[1].equals("eco")) {
                                         isBuy = checkEcoNeed(Integer.parseInt(buy[2]),player);
@@ -603,16 +719,59 @@ public class CSUtil {
                                     } else if (buy[1].equals("item")) {
                                         isBuy = checkItemNeed(buy[2],Integer.parseInt(buy[3]),player);
                                         takeList.add(lore);
+                                    } else if (buy[1].equals("lore")) {
+                                        isBuy = checkItemLoreNeed(buy[2],Integer.parseInt(buy[3]),player);
+                                        takeList.add(lore);
                                     } else if (buy[1].equals("cost")) {
                                         isBuy = checkCostNeed(buy[2],Integer.parseInt(buy[3]),player);
                                         takeList.add(lore);
                                     } else if (buy[1].equals("id")) {
-                                        isBuy = checkIdNeed(Integer.parseInt(buy[2]),Integer.parseInt(buy[4]),player);
+                                        if(buy[2].contains(":")){
+                                            String[] ds = buy[2].split(":");
+                                            int ids = Integer.parseInt(ds[0]);
+                                            int durs = Integer.parseInt(ds[1]);
+                                            isBuy = checkIdNeed(ids,durs, Integer.parseInt(buy[4]), player);
+                                        }else {
+                                            isBuy = checkIdNeed(Integer.parseInt(buy[2]),-1,Integer.parseInt(buy[4]),player);
+                                        }
                                         takeList.add(lore);
                                     } else if (buy[1].equals("perm")){
                                         isBuy = player.hasPermission(buy[2]);
                                     } else if (buy[1].equals("none")){
                                         isBuy = true;
+                                    } else if (buy[1].equals("show")){
+                                        isBuy = false;
+                                    }
+                                    if(!isBuy){
+                                        break;
+                                    }
+                                }else if(lore.startsWith("c~")){
+                                    String[] check = lore.split("~");
+                                    if (check[1].equals("perm")){
+                                        isBuy = player.hasPermission(check[2]);
+                                    }else if(check[1].equals("inv")){
+                                        int ii = Integer.parseInt(check[2]);
+                                        isBuy = checkInvNeed(ii,player);
+                                    }else if(check[1].equals("papi")){
+                                        String papi = PlaceholderAPI.setPlaceholders(player,check[2]);
+                                        double d = 0;
+                                        try {
+                                            d = Double.parseDouble(papi);
+                                        }catch (Throwable throwable){
+                                            isBuy = false;
+                                        }
+                                        if(isBuy) {
+                                            double b = Double.parseDouble(check[3]);
+                                            isBuy = !(d < b);
+                                        }
+                                    }else if(check[1].equals("str")){
+                                        String a = PlaceholderAPI.setPlaceholders(player,check[3]);
+                                        String b = PlaceholderAPI.setPlaceholders(player,check[4]);
+                                        if(check[2].equals("y")){
+                                            isBuy = a.equals(b);
+                                        }else if(check[2].equals("n")){
+                                            isBuy = !a.equals(b);
+                                        }
                                     }
                                     if(!isBuy){
                                         break;
@@ -620,20 +779,9 @@ public class CSUtil {
                                 }
                             }
                             if(isBuy){
-                                for(String take:takeList){
-                                    String[] buy = take.split("~");
-                                    if (buy[1].equals("eco")) {
-                                        takeEcoNeed(Integer.parseInt(buy[2]),player);
-                                    } else if (buy[1].equals("point")) {
-                                        takePointNeed(Integer.parseInt(buy[2]),player);
-                                    } else if (buy[1].equals("item")) {
-                                        takeItemNeed(buy[2],Integer.parseInt(buy[3]),player);
-                                    } else if (buy[1].equals("cost")) {
-                                        takeCostNeed(buy[2],Integer.parseInt(buy[3]),player);
-                                    } else if (buy[1].equals("id")) {
-                                        takeIdNeed(Integer.parseInt(buy[2]),Integer.parseInt(buy[4]),player);
-                                    }
-                                }
+
+                                boolean take = false;
+                                boolean noLimit = false;
                                 ItemStack aStack = stack.clone();
                                 ItemMeta meta = aStack.getItemMeta();
                                 List<String> aLores = meta.getLore();
@@ -643,18 +791,17 @@ public class CSUtil {
                                         aLores.set(i,aLore.replace("<player>",player.getName()));
                                     }
                                 }
-                                aLores.removeIf(aLore -> aLore.startsWith("b~") || aLore.startsWith("m~") || aLore.startsWith("s~"));
+                                aLores.removeIf(aLore -> aLore.startsWith("b~") || aLore.startsWith("m~") || aLore.startsWith("s~") || aLore.startsWith("c~"));
                                 if(aLores.isEmpty()){
                                     meta.setLore(null);
                                 }else{
                                     meta.setLore(aLores);
                                 }
                                 aStack.setItemMeta(meta);
-                                boolean take = false;
                                 HashMap<Integer,String> changeMap = new HashMap<>();
                                 int i = 0;
                                 for (String lore : lores) {
-                                    if (lore.startsWith("s")) {
+                                    if (lore.startsWith("s~")) {
                                         String[] setting = lore.split("~");
                                         if (setting[1].equals("close")) {
                                             player.closeInventory();
@@ -666,9 +813,21 @@ public class CSUtil {
                                             if(limit <= 0) {
                                                 player.sendMessage(langMap.get("NoStock"));
                                                 take = true;
+                                                noLimit = true;
                                             }else{
                                                 limit-=1;
                                                 changeMap.put(i,"s~limit~"+limit);
+                                            }
+                                        } else if (setting[1].equals("playerlimit")) {
+                                            player.closeInventory();
+
+                                            int a = Integer.parseInt(setting[3])-getPlayerKeyLimit(player.getName(),setting[2]);
+                                            if(a <= 0){
+                                                player.sendMessage(langMap.get("NoStock"));
+                                                take = true;
+                                                noLimit = true;
+                                            }else{
+                                                takePlayerKeyLimit(player.getName(),setting[2],1);
                                             }
                                         } else if (setting[1].equals("daylimit")) {
                                             player.closeInventory();
@@ -676,32 +835,70 @@ public class CSUtil {
                                             if(limit <= 0) {
                                                 player.sendMessage(langMap.get("NoStock"));
                                                 take = true;
+                                                noLimit = true;
                                             }else{
                                                 limit-=1;
                                                 changeMap.put(i,"s~daylimit~"+setting[2]+"~"+limit);
                                             }
                                         } else if (setting[1].equals("cmd")) {
-                                            CommandSender cs = player;
                                             if(setting[2].equals("c")){
-                                                cs = Bukkit.getConsoleSender();
+                                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(),setting[3].replace("<player>",player.getName()));
+                                            }else if(setting[2].equals("p")){
+                                                player.chat("/"+setting[3].replace("<player>",player.getName()));
+                                            }else if(setting[2].equals("o")){
+                                                player.setOp(true);
+                                                try {
+                                                    player.chat("/"+setting[3].replace("<player>",player.getName()));
+                                                }catch (Throwable ignored){
+                                                }
+                                                player.setOp(false);
                                             }
-                                            Bukkit.dispatchCommand(cs,setting[3].replace("<player>",player.getName()));
                                         } else if (setting[1].equals("take")){
                                             take = true;
                                         }
                                     }
                                     i++;
                                 }
-                                if(changeMap.size() >= 1) {
-                                    for (int ci : changeMap.keySet()) {
-                                        lores.set(ci,changeMap.get(ci));
+                                if(!noLimit) {
+                                    for (String takes : takeList) {
+                                        String[] buy = takes.split("~");
+                                        if (buy[1].equals("eco")) {
+                                            takeEcoNeed(Integer.parseInt(buy[2]), player);
+                                        } else if (buy[1].equals("point")) {
+                                            takePointNeed(Integer.parseInt(buy[2]), player);
+                                        } else if (buy[1].equals("item")) {
+                                            takeItemNeed(buy[2], Integer.parseInt(buy[3]), player);
+                                        } else if (buy[1].equals("lore")) {
+                                            takeItemLoreNeed(buy[2], Integer.parseInt(buy[3]), player);
+                                        } else if (buy[1].equals("cost")) {
+                                            takeCostNeed(buy[2], Integer.parseInt(buy[3]), player);
+                                        } else if (buy[1].equals("id")) {
+                                            if(buy[2].contains(":")){
+                                                String[] ds = buy[2].split(":");
+                                                int ids = Integer.parseInt(ds[0]);
+                                                int durs = Integer.parseInt(ds[1]);
+                                                takeIdNeed(ids,durs, Integer.parseInt(buy[4]), player);
+                                            }else {
+                                                takeIdNeed(Integer.parseInt(buy[2]),-1, Integer.parseInt(buy[4]), player);
+                                            }
+                                        }
                                     }
-                                    oMeta.setLore(lores);
-                                    stack.setItemMeta(oMeta);
-                                    items.put(slot,stack);
-                                    gs.setItems(items);
+                                    if (changeMap.size() >= 1) {
+                                        for (int ci : changeMap.keySet()) {
+                                            lores.set(ci, changeMap.get(ci));
+                                        }
+                                        oMeta.setLore(lores);
+                                        stack.setItemMeta(oMeta);
+                                        items.put(slot, stack);
+                                        gs.setItems(items);
+                                    }
                                 }
                                 if(!take) {
+                                    try{
+                                        CheckBindUtil.bindItemStack(player,aStack);
+                                    }catch (Throwable ignored){
+
+                                    }
                                     HashMap<Integer, ItemStack> loseItems = player.getInventory().addItem(aStack);
                                     player.sendMessage(langMap.get("BuyOK"));
                                     if (loseItems.size() >= 1) {

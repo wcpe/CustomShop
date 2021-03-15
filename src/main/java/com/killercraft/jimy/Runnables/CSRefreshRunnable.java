@@ -8,7 +8,7 @@ public class CSRefreshRunnable implements Runnable {
     @Override
     public void run() {
         for(GuiShop gs:customShops.values()){
-            gs.refreshItems();
+            //gs.refreshItems();
         }
     }
 }

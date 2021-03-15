@@ -5,10 +5,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 
-import java.util.HashMap;
 
 import static com.killercraft.jimy.CustomShop.costMap;
-import static com.killercraft.jimy.CustomShop.hookPlayerData;
 import static com.killercraft.jimy.Utils.CSCostUtil.checkCost;
 
 public class CSPAPIHooker extends PlaceholderExpansion {
@@ -30,7 +28,7 @@ public class CSPAPIHooker extends PlaceholderExpansion {
     }
 
     public String getVersion() {
-        return "1.0.0";
+        return "1.3.2";
     }
 
     public String onPlaceholderRequest(Player player, String s) {
@@ -43,21 +41,10 @@ public class CSPAPIHooker extends PlaceholderExpansion {
                 if (costSplit[2].equals("name")) {
                     return costName;
                 } else if (costSplit[2].equals("bal")) {
-                    return checkHookCost(player.getName(), costId) + "";
+                    return checkCost(player.getName(),costId)+"";
                 } else return null;
             }
         }
         return null;
-    }
-
-
-    private int checkHookCost(String name,String costId){
-        if (hookPlayerData.containsKey(name)) {
-            HashMap<String, Integer> pCosts = hookPlayerData.get(name);
-            if (pCosts.containsKey(costId)) {
-                return pCosts.get(costId);
-            }
-        }
-        return 0;
     }
 }
