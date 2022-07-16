@@ -1,5 +1,6 @@
 package com.killercraft.jimy.Listeners;
 
+import com.killercraft.jimy.Manager.CustomShopHolder;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
@@ -10,6 +11,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -22,7 +24,11 @@ public class CSInvListener implements Listener {
     @EventHandler
     public void onClick(InventoryClickEvent event){
         Inventory inv = event.getInventory();
-        String title = inv.getTitle();
+        String title = null;
+        InventoryHolder ih = inv.getHolder();
+        if(ih instanceof CustomShopHolder){
+            title = ((CustomShopHolder) ih).getTitle();
+        }
         if(title != null && title.startsWith("[E]")){
             HumanEntity he = event.getWhoClicked();
             if(he instanceof Player) {
@@ -64,7 +70,11 @@ public class CSInvListener implements Listener {
     @EventHandler
     public void onClose(InventoryCloseEvent event){
         Inventory inv = event.getInventory();
-        String title = inv.getTitle();
+        String title = null;
+        InventoryHolder ih = inv.getHolder();
+        if(ih instanceof CustomShopHolder){
+            title = ((CustomShopHolder) ih).getTitle();
+        }
         if(title != null && title.startsWith("[E]")){
             String shopName = title.replace("[E]","");
             closeShop(shopName,inv);
@@ -74,7 +84,11 @@ public class CSInvListener implements Listener {
     @EventHandler
     public void onDrag(InventoryDragEvent event){
         Inventory inv = event.getInventory();
-        String title = inv.getTitle();
+        String title = null;
+        InventoryHolder ih = inv.getHolder();
+        if(ih instanceof CustomShopHolder){
+            title = ((CustomShopHolder) ih).getTitle();
+        }
         if(title != null && title.startsWith("[E]")){
             HumanEntity he = event.getWhoClicked();
             if(he instanceof Player) {

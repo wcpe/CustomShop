@@ -1,21 +1,20 @@
 package com.killercraft.jimy.Listeners;
 
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.HashMap;
-import java.util.HashSet;
-
 import static com.killercraft.jimy.CustomShop.*;
 import static com.killercraft.jimy.MySQL.CustomShopDatabase.enableMySQL;
 
 public class CSPlayerListener implements Listener {
 
-    @EventHandler
+
+    @EventHandler(priority = EventPriority.LOWEST)
     public void onJoin(PlayerJoinEvent event){
         if(!enableMySQL) return;
         Player player = event.getPlayer();
@@ -38,4 +37,6 @@ public class CSPlayerListener implements Listener {
         csb.deleteLimitData(pName);
         if(limitData.containsKey(pName)) csb.insertLimits(pName);
     }
+
+
 }

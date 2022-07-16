@@ -1,11 +1,12 @@
 name: CustomShop
-version: 1.3
+version: 1.3.2
 main: com.killercraft.jimy.CustomShop
 commands:
   cshop:
 depend:
   - Vault
   - ProtocolLib
+  - MySQLSafeLock
 softdepend:
   - PlayerPoints
   - PlaceholderAPI

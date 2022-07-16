@@ -8,7 +8,6 @@ import com.killercraft.jimy.Manager.GuiShop;
 import com.killercraft.jimy.MySQL.CustomShopDatabase;
 import com.killercraft.jimy.MySQL.CustomShopSQLUpdate;
 import com.killercraft.jimy.Runnables.CSInvCooldown;
-import com.killercraft.jimy.Runnables.CSRefreshRunnable;
 import com.killercraft.jimy.Runnables.CSSaveDataRunnable;
 import com.killercraft.jimy.Utils.CSUtil;
 import net.milkbowl.vault.economy.Economy;
@@ -91,7 +90,6 @@ public final class CustomShop extends JavaPlugin {
         }
         saveDefaultConfig();
         update();
-        Bukkit.getScheduler().runTaskTimer(this,new CSRefreshRunnable(),1200,1200);
         Bukkit.getScheduler().runTaskTimerAsynchronously(this,new CSSaveDataRunnable(),6000,6000);
         Bukkit.getScheduler().runTaskTimerAsynchronously(this,new CustomShopSQLUpdate(),40,400);
         Bukkit.getScheduler().runTaskTimerAsynchronously(this,new CSInvCooldown(),2,2);
@@ -146,10 +144,10 @@ public final class CustomShop extends JavaPlugin {
                     if(!player.isOp()) return true;
                     sendList(player,args[1]);
                 }else if(args.length == 2 && args[0].equalsIgnoreCase("open")){
-                    openShop(player,args[1]);
-                    /*if(player.hasPermission("customshop.open."+args[1])) {
+                    //openShop(player,args[1]);
+                    if(player.hasPermission("customshop.open."+args[1])) {
                         openShop(player,args[1]);
-                    }else player.sendMessage(langMap.get("NoPermisson").replace("<perm>","customshop.open."+args[1]));*/
+                    }else player.sendMessage(langMap.get("NoPermisson").replace("<perm>","customshop.open."+args[1]));
                 }else if(args.length == 3 && args[0].equalsIgnoreCase("open")){
                     if(!player.isOp()) return true;
                     Player players = Bukkit.getPlayer(args[2]);
@@ -272,6 +270,7 @@ public final class CustomShop extends JavaPlugin {
                     csb.allPut();
                 }
             }else{
+                if(!sender.isOp()) return true;
                 if(args.length == 3 && args[0].equalsIgnoreCase("open")){
                     Player player = Bukkit.getPlayer(args[2]);
                     if(player == null) return true;
@@ -284,6 +283,28 @@ public final class CustomShop extends JavaPlugin {
                     String msg = delCost(args[1],args[2],Integer.parseInt(args[3]));
                     if(msg == null) return true;
                     sender.sendMessage(msg);
+                }
+                if(args.length >= 2 && args[0].equalsIgnoreCase("cost")){
+                    if(sender.isOp()) {
+                        if(args[1].equalsIgnoreCase("create") && args.length == 4){
+                            if(createCost(args[2],args[3])){
+                                sender.sendMessage(langMap.get("CostCreate"));
+                            }else sender.sendMessage(langMap.get("CostCreateNull"));
+                        }else if(args[1].equalsIgnoreCase("delete") && args.length == 4){
+                            if(deleteCost(args[2],Boolean.getBoolean(args[3]))){
+                                sender.sendMessage(langMap.get("CostDelete"));
+                            }else sender.sendMessage(langMap.get("CostDeleteNull"));
+                        }else if(args[1].equalsIgnoreCase("clear") && args.length == 3){
+                            clearCost(args[2]);
+                            sender.sendMessage(langMap.get("CostClear"));
+                        }else if(args[1].equalsIgnoreCase("rename") && args.length == 4){
+                            if(renameCost(args[2],args[3])){
+                                sender.sendMessage(langMap.get("CostRename"));
+                            }else sender.sendMessage(langMap.get("CostRenameNull"));
+                        }else if(args[1].equalsIgnoreCase("list")){
+                            sendCostList(sender);
+                        }
+                    }
                 }
             }
         }
@@ -302,8 +323,8 @@ public final class CustomShop extends JavaPlugin {
                 csb.deletePlayerData(pName);
                 csb.insertData(pName,data);
             }
+            csb.closeConnectionQuietly();
         }
-        csb.closeConnectionQuietly();
     }
     private void setupEconomy(){
         RegisteredServiceProvider economyProvider = getServer().getServicesManager().getRegistration(Economy.class);

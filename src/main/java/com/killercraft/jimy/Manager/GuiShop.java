@@ -29,7 +29,6 @@ public class GuiShop {
         this.line = line;
         this.shopName = shopName;
         this.items = new HashMap<>();
-        //shopInv = Bukkit.createInventory(null,line*9,toWord(shopName));
     }
 
     public GuiShop(ResultSet result) throws SQLException {
@@ -40,7 +39,6 @@ public class GuiShop {
         if(itemStrings.length() > 0){
             atStringsSetItems(itemStrings);
         }
-        //shopInv = Bukkit.createInventory(null,line*9,toWord(shopName));
     }
 
     public void atStringsSetItems(String itemDatas){
@@ -81,7 +79,7 @@ public class GuiShop {
             openEditInv(player);
         }else {
             //player.openInventory(shopInv);
-            Inventory inv = Bukkit.createInventory(null, line * 9, shopName);
+            Inventory inv = Bukkit.createInventory(new CustomShopHolder(shopName), line * 9, shopName);
             refreshItems(inv, player);
             player.openInventory(inv);
         /*for(int i = 0;i<shopInv.getSize();i++){
@@ -109,7 +107,8 @@ public class GuiShop {
     }*/
 
     public void openEditInv(Player player){
-        Inventory inv = Bukkit.createInventory(null,line*9,"[E]"+toWord(shopName));
+        String title = "[E]"+toWord(shopName);
+        Inventory inv = Bukkit.createInventory(new CustomShopHolder(title),line*9,title);
         for(int i:items.keySet()){
             inv.setItem(i,items.get(i));
         }
@@ -282,6 +281,8 @@ public class GuiShop {
             String lore = lores.get(i);
             if(lore.contains("<player>")){
                 lores.set(i,lore.replace("<player>",player.getName()));
+            }else if(lore.contains("<uuid>")){
+                lores.set(i,lore.replace("<uuid>",player.getUniqueId().toString()));
             }
         }
         if(!noLore) {

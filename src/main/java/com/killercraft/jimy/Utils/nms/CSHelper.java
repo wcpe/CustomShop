@@ -6,6 +6,7 @@ import com.killercraft.jimy.Utils.nms.v1_12_R1.ChatMessageSender1_12;
 import com.killercraft.jimy.Utils.nms.v1_13_R2.ChatMessageSender1_13;
 import com.killercraft.jimy.Utils.nms.v1_14_R1.ChatMessageSender1_14;
 import com.killercraft.jimy.Utils.nms.v1_15_R1.ChatMessageSender1_15;
+import com.killercraft.jimy.Utils.nms.v1_16_R3.ChatMessageSender1_16;
 import com.killercraft.jimy.Utils.nms.v1_9_R2.ChatMessageSender1_9;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -32,6 +33,8 @@ public class CSHelper {
             ChatMessageSender1_14.sendHandleMessage(handler,title,shopName,endText,hover);
         }else if(version.equals("v1_15_R1")){
             ChatMessageSender1_15.sendHandleMessage(handler,title,shopName,endText,hover);
+        }else if(version.equals("v1_16_R3")){
+            ChatMessageSender1_16.sendHandleMessage(handler,title,shopName,endText,hover);
         }
     }
 }

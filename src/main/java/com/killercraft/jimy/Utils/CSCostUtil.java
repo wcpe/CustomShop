@@ -1,16 +1,11 @@
 package com.killercraft.jimy.Utils;
 
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitScheduler;
-
 import java.util.HashMap;
 
 import static com.killercraft.jimy.CustomShop.*;
 
 public class CSCostUtil {
 
-    //private static BukkitScheduler bk = Bukkit.getScheduler();
 
     public static String giveCost(String name,String costId,int i){
         if (playerData.containsKey(name)) {

@@ -1,16 +1,18 @@
 package com.killercraft.jimy.Utils;
 
 import com.killercraft.jimy.CustomShop;
+import com.killercraft.jimy.Manager.CustomShopHolder;
 import com.killercraft.jimy.Manager.GuiShop;
 import com.killercraft.jimy.Utils.nms.CSHelper;
-import com.killercraft.jimy.utils.CheckBindUtil;
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -79,7 +81,7 @@ public class CSUtil {
         }
     }
 
-    public static void sendCostList(Player player) {
+    public static void sendCostList(CommandSender player) {
         String costTitle = langMap.get("CostTitle");
         String costName = langMap.get("CostName");
         if (!enableMySQL) {
@@ -355,10 +357,9 @@ public class CSUtil {
     }
 
 
-
-    public static void reloadConfig(Player player) {
+    public static void reloadConfig(CommandSender sender) {
         if (!enableMySQL) {
-            if (!player.isOp()) return;
+            if (!sender.isOp()) return;
             for (GuiShop gs : customShops.values()) {
                 gs.closeAllInv(langMap.get("ReloadClose"));
             }
@@ -366,7 +367,7 @@ public class CSUtil {
             saveShops();
             saveRefresh();
             update();
-            player.sendMessage("[CustomShop]Reload Config!");
+            sender.sendMessage("[CustomShop]Reload Config!");
         } else {
             bk.runTaskAsynchronously(plugin, () -> {
                 HashMap<String, GuiShop> cshops = getShops();
@@ -377,11 +378,12 @@ public class CSUtil {
                     saveShops();
                     saveRefresh();
                     update();
-                    player.sendMessage("[CustomShop]Reload Config!");
+                    sender.sendMessage("[CustomShop]Reload Config!");
                 });
             });
         }
     }
+
 
     public static void upLoadShopCostData(){
         if(customShops.size() >= 1){
@@ -435,7 +437,11 @@ public class CSUtil {
             if (invv == null) continue;
             Inventory inv = invv.getTopInventory();
             if (inv == null) continue;
-            String title = inv.getTitle();
+            String title = null;
+            InventoryHolder ih = inv.getHolder();
+            if(ih instanceof CustomShopHolder){
+                title = ((CustomShopHolder) ih).getTitle();
+            }
             if (null == title) continue;
             if (title.contains(shopName)) {
                 player.closeInventory();
@@ -575,6 +581,8 @@ public class CSUtil {
                             String aLore = aLores.get(i);
                             if(aLore.contains("<player>")){
                                 aLores.set(i,aLore.replace("<player>",player.getName()));
+                            }else if(aLore.contains("<uuid>")){
+                                aLores.set(i,aLore.replace("<uuid>",player.getUniqueId().toString()));
                             }
                         }
                         aLores.removeIf(aLore -> aLore.startsWith("b~") || aLore.startsWith("m~") || aLore.startsWith("s~") || aLore.startsWith("c~"));
@@ -629,13 +637,13 @@ public class CSUtil {
                                     }
                                 } else if (setting[1].equals("cmd")) {
                                     if(setting[2].equals("c")){
-                                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(),setting[3].replace("<player>",player.getName()));
+                                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(),setting[3].replace("<player>",player.getName()).replace("<uuid>",player.getUniqueId().toString()));
                                     }else if(setting[2].equals("p")){
-                                        player.chat("/"+setting[3].replace("<player>",player.getName()));
+                                        player.chat("/"+setting[3].replace("<player>",player.getName()).replace("<uuid>",player.getUniqueId().toString()));
                                     }else if(setting[2].equals("o")){
                                         player.setOp(true);
                                         try {
-                                            player.chat("/"+setting[3].replace("<player>",player.getName()));
+                                            player.chat("/"+setting[3].replace("<player>",player.getName()).replace("<uuid>",player.getUniqueId().toString()));
                                         }catch (Throwable ignored){
                                         }
                                         player.setOp(false);
@@ -789,6 +797,8 @@ public class CSUtil {
                                     String aLore = aLores.get(i);
                                     if(aLore.contains("<player>")){
                                         aLores.set(i,aLore.replace("<player>",player.getName()));
+                                    }else if(aLore.contains("<uuid>")){
+                                        aLores.set(i,aLore.replace("<uuid>",player.getUniqueId().toString()));
                                     }
                                 }
                                 aLores.removeIf(aLore -> aLore.startsWith("b~") || aLore.startsWith("m~") || aLore.startsWith("s~") || aLore.startsWith("c~"));
@@ -842,13 +852,13 @@ public class CSUtil {
                                             }
                                         } else if (setting[1].equals("cmd")) {
                                             if(setting[2].equals("c")){
-                                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(),setting[3].replace("<player>",player.getName()));
+                                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(),setting[3].replace("<player>",player.getName()).replace("<uuid>",player.getUniqueId().toString()));
                                             }else if(setting[2].equals("p")){
-                                                player.chat("/"+setting[3].replace("<player>",player.getName()));
+                                                player.chat("/"+setting[3].replace("<player>",player.getName()).replace("<uuid>",player.getUniqueId().toString()));
                                             }else if(setting[2].equals("o")){
                                                 player.setOp(true);
                                                 try {
-                                                    player.chat("/"+setting[3].replace("<player>",player.getName()));
+                                                    player.chat("/"+setting[3].replace("<player>",player.getName()).replace("<uuid>",player.getUniqueId().toString()));
                                                 }catch (Throwable ignored){
                                                 }
                                                 player.setOp(false);
@@ -894,11 +904,7 @@ public class CSUtil {
                                     }
                                 }
                                 if(!take) {
-                                    try{
-                                        CheckBindUtil.bindItemStack(player,aStack);
-                                    }catch (Throwable ignored){
 
-                                    }
                                     HashMap<Integer, ItemStack> loseItems = player.getInventory().addItem(aStack);
                                     player.sendMessage(langMap.get("BuyOK"));
                                     if (loseItems.size() >= 1) {

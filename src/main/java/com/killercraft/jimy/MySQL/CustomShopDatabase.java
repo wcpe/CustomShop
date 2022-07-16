@@ -295,18 +295,18 @@ public class CustomShopDatabase {
         }
     }
 
-    public void deletePlayerData(String playerName){
-        playerName = toUnicode(playerName);
+    public void deletePlayerData(String playerNameb){
+        String playerName = toUnicode(playerNameb);
         try {
-            PreparedStatement statement = conn.prepareStatement("TRUNCATE TABLE `playerdata` WHERE `playername`='"+playerName+"'");
+            PreparedStatement statement = conn.prepareStatement("DELETE FROM `playerdata` WHERE `playername`='"+playerName+"'");
             statement.execute();
             statement.close();
         } catch (SQLException ex) {
         }
     }
 
-    public void insertData(String pName,HashMap<String,Integer> data) {
-        pName = toUnicode(pName);
+    public void insertData(String pNameb,HashMap<String,Integer> data) {
+        String pName = toUnicode(pNameb);
         try {
             PreparedStatement prepareStatement = conn.prepareStatement("INSERT INTO `playerdata` " +
                     "(`playername`, `costid`, `costbal`) VALUES (?,?,?)");
@@ -315,8 +315,8 @@ public class CustomShopDatabase {
                 prepareStatement.setString(2, id);
                 prepareStatement.setInt(3, data.get(id));
                 prepareStatement.execute();
-                prepareStatement.close();
             }
+            prepareStatement.close();
         } catch (SQLException sqlEx) {
         }
     }
