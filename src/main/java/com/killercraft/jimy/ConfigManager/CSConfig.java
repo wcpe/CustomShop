@@ -15,35 +15,34 @@ import java.util.HashMap;
 
 import static com.killercraft.jimy.ConfigManager.CSDataUtil.*;
 import static com.killercraft.jimy.CustomShop.*;
-import static com.killercraft.jimy.MySQL.CustomShopDatabase.*;
+import static com.killercraft.jimy.MySQL.CustomShopDatabase.enableMySQL;
 
 public class CSConfig {
-
-    public static void update(){
+    public static void update() {
         File file = new File(CustomShop.root, "config.yml");
         FileConfiguration config = load(file);
         boolean save = false;
         String checkStr = config.getString("Lang.InvCheckString");
-        if(checkStr == null){
-            config.set("Lang.InvCheckString","&7>> &c±≥∞¸ £”‡&7[<value>&7]ø’∏Ò");
+        if (checkStr == null) {
+            config.set("Lang.InvCheckString", "&7>> &cËÉåÂåÖÂâ©‰Ωô&7[<value>&7]Á©∫Ê†º");
             save = true;
         }
         checkStr = config.getString("Lang.PAPICheckString");
-        if(checkStr == null){
-            config.set("Lang.PAPICheckString","&7>> &c<text>");
+        if (checkStr == null) {
+            config.set("Lang.PAPICheckString", "&7>> &c<text>");
             save = true;
         }
         checkStr = config.getString("Lang.StrCheckString");
-        if(checkStr == null){
-            config.set("Lang.StrCheckString","&7>> &c<text>");
+        if (checkStr == null) {
+            config.set("Lang.StrCheckString", "&7>> &c<text>");
             save = true;
         }
         checkStr = config.getString("Lang.PlayerLimit");
-        if(checkStr == null){
-            config.set("Lang.PlayerLimit","&7>> &cƒ˙ªπø…π∫¬Ú: &b<value> &c¥Œ");
+        if (checkStr == null) {
+            config.set("Lang.PlayerLimit", "&7>> &cÊÇ®ËøòÂèØË¥≠‰π∞: &b<value> &cÊ¨°");
             save = true;
         }
-        if(save){
+        if (save) {
             try {
                 config.save(file);
             } catch (IOException e) {
@@ -52,17 +51,17 @@ public class CSConfig {
         }
         ConfigurationSection langs = config.getConfigurationSection("Lang");
         langMap = new HashMap<>();
-        for(String temp:langs.getKeys(false)){
-            langMap.put(temp,langs.getString(temp).replace('&', ChatColor.COLOR_CHAR));
+        for (String temp : langs.getKeys(false)) {
+            langMap.put(temp, langs.getString(temp).replace('&', ChatColor.COLOR_CHAR));
         }
         ConfigurationSection costs = config.getConfigurationSection("Costs");
         costMap = new HashMap<>();
-        for(String temp:costs.getKeys(false)){
-            costMap.put(temp,costs.getString(temp).replace('&', ChatColor.COLOR_CHAR));
+        for (String temp : costs.getKeys(false)) {
+            costMap.put(temp, costs.getString(temp).replace('&', ChatColor.COLOR_CHAR));
         }
         day = Calendar.getInstance().get(Calendar.DAY_OF_YEAR);
         enableMySQL = config.getBoolean("MySQL");
-        if(enableMySQL) {
+        if (enableMySQL) {
             csb = new CustomShopDatabase();
             csb.host = config.getString("MySQLHost");
             csb.port = config.getString("MySQLPort");
@@ -71,7 +70,7 @@ public class CSConfig {
             csb.databaseName = config.getString("MySQLDatabase");
             csb.useSSL = config.getBoolean("MySQLUseSSL");
             try {
-                if(csb.getConnection() == null) enableMySQL = false;
+                if (csb.getConnection() == null) enableMySQL = false;
                 csb.createCostsTable();
                 csb.createPlayerDataTable();
                 csb.createRefreshTable();
@@ -80,7 +79,7 @@ public class CSConfig {
                 e.printStackTrace();
                 enableMySQL = false;
             }
-        }else {
+        } else {
             loadData();
             loadShops();
             loadRefresh();

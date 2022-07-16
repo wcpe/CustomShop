@@ -1,179 +1,1 @@
-package com.killercraft.jimy;
-
-import com.killercraft.jimy.Utils.CSCostUtil;
-import org.bukkit.ChatColor;
-import org.bukkit.configuration.file.FileConfiguration;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
-import static com.killercraft.jimy.ConfigManager.CSConfig.load;
-import static com.killercraft.jimy.CustomShop.*;
-import static com.killercraft.jimy.MySQL.CustomShopDatabase.enableMySQL;
-
-public class CustomShopAPI {
-
-    /*
-    Íæ¼ÒÃû @name »õ±Òid @costId ÊıÁ¿ @i
-    ¸øÓèÖ¸¶¨Íæ¼ÒÃûÖ¸¶¨ÊıÁ¿µÄÖ¸¶¨»õ±Ò
-     */
-    public static void giveCost(String name,String costId,int i){
-        CSCostUtil.giveCost(name,costId,i);
-    }
-
-    /*
-    Íæ¼ÒÃû @name »õ±Òid @costId ÊıÁ¿ @i
-    ÄÃÈ¡Ö¸¶¨Íæ¼ÒÃûÖ¸¶¨ÊıÁ¿µÄÖ¸¶¨»õ±Ò
-    ·µ»Ø boolean
-    true ´ú±í ¿ÛÈ¡³É¹¦
-    false Ôò´ú±íÍæ¼ÒÖ¸¶¨»õ±ÒÊıÁ¿²»¹» ²¢²»»á¿ÛÈ¡»õ±Ò
-     */
-    public static boolean takeCost(String name,String costId,int i){
-        return CSCostUtil.takeCost(name,costId,i);
-    }
-
-    /*
-    Íæ¼ÒÃû @name »õ±Òid @costId ÊıÁ¿ @i
-    É¾³ıÖ¸¶¨Íæ¼ÒÃûÖ¸¶¨ÊıÁ¿µÄÖ¸¶¨»õ±Ò
-    Èç¹ûÍæ¼Ò»õ±Ò²»×ã´Ë´¦ÌîĞ´µÄÊıÁ¿ ÔòÖ±½ÓÉèÎª 0
-    */
-    public static void delCost(String name,String costId,int i){
-        CSCostUtil.delCost(name,costId,i);
-    }
-
-    /*
-    Íæ¼ÒÃû @name »õ±Òid @costId
-    ²é¿´Ö¸¶¨Íæ¼ÒÃûÖ¸¶¨»õ±Ò
-    ·µ»Ø int Îª¸Ã»õ±ÒÓà¶î
-    */
-    public static int checkCost(String name,String costId){
-        return CSCostUtil.checkCost(name, costId);
-    }
-
-    /*
-    »õ±Òid @costId »õ±ÒÃû @costName
-    Ö±½Ó´´½¨Ò»ÖÖĞÂµÄ»õ±Ò ²¢ĞŞ¸Ä¸Ã²å¼şconfigĞÂÔö»õ±Ò
-    ·µ»Ø boolean
-    true ´ú±í ´´½¨³É¹¦
-    false Ôò´ú±íÖØ¸´µÄ»õ±ÒidÒÑ´æÔÚ
-    */
-    public static boolean createCost(String costId,String costName){
-        costName = costName.replace('&', ChatColor.COLOR_CHAR);
-        if(!enableMySQL) {
-            if (!costMap.containsKey(costId)) {
-                costMap.put(costId, costName);
-                File file = new File(CustomShop.root, "config.yml");
-                FileConfiguration config = load(file);
-                config.set("Costs." + costId, costName.replace(ChatColor.COLOR_CHAR, '&'));
-                try {
-                    config.save(file);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                return true;
-            } else return false;
-        }else return csb.insertNewCost(costId,costName);
-    }
-
-    /*
-    »õ±Òid @costId »õ±ÒÃû @costName
-    ĞŞ¸ÄÒ»ÖÖÒÑ´æÔÚµÄ»õ±ÒidµÄ»õ±ÒÃû ²¢ĞŞ¸Ä¸Ã²å¼şconfig¸ÄÃû»õ±Ò
-    ·µ»Ø boolean
-    true ´ú±í Ãû³ÆĞŞ¸Ä³É¹¦
-    false Ôò´ú±í»õ±Òid²»´æÔÚ
-    */
-    public static boolean renameCost(String costId,String costName){
-        costName = costName.replace('&', ChatColor.COLOR_CHAR);
-        if(!enableMySQL) {
-            if (costMap.containsKey(costId)) {
-                costMap.put(costId, costName);
-                File file = new File(CustomShop.root, "config.yml");
-                FileConfiguration config = load(file);
-                config.set("Costs." + costId, costName.replace(ChatColor.COLOR_CHAR, '&'));
-                try {
-                    config.save(file);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                return true;
-            } else return false;
-        }else return csb.updateCost(costId,costName);
-    }
-
-    /*
-    »õ±Òid @costId  ÊÇ·ñÇåÀíÓà¶î @clear
-    É¾³ıÒ»ÖÖÒÑ´æÔÚµÄ»õ±Òid ²¢ĞŞ¸Ä¸Ã²å¼şconfigÉ¾³ı»õ±Ò
-    ·µ»Ø boolean
-    true ´ú±í Ãû³ÆÉ¾³ı³É¹¦
-    false Ôò´ú±í»õ±Òid²»´æÔÚ
-    */
-    public static boolean deleteCost(String costId,boolean clear){
-        if(!enableMySQL) {
-            if (costMap.containsKey(costId)) {
-                costMap.remove(costId);
-                if(clear) clearCost(costId);
-                File file = new File(CustomShop.root, "config.yml");
-                FileConfiguration config = load(file);
-                config.set("Costs." + costId, null);
-                try {
-                    config.save(file);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                return true;
-            } else return false;
-        }else {
-            if(clear) csb.clearCost(costId);
-            return csb.deleteCosts(costId);
-        }
-    }
-
-    /*
-    »õ±Òid @costId
-    ÇåÀíÏÖËùÓĞÍæ¼ÒµÄÊı¾İÖĞµÄÖ¸¶¨»õ±ÒidµÄÊıÁ¿
-    */
-    public static void clearCost(String costId){
-        Iterator<Map.Entry<String, HashMap<String, Integer>>> it1 = playerData.entrySet().iterator();
-        while (it1.hasNext()) {
-            Map.Entry<String, HashMap<String, Integer>> e1 = it1.next();
-            HashMap<String, Integer> map1 = e1.getValue();
-            map1.entrySet().removeIf(e2 -> e2.getKey().equalsIgnoreCase(costId));
-            if (map1.size() < 1) {
-                it1.remove();
-            } else {
-                e1.setValue(map1);
-            }
-        }
-    }
-
-    /*
-    »õ±Òid @costId
-    »ñÈ¡Ö¸¶¨»õ±ÒidµÄÃû×Ö
-    ·µ»Ø String ÎªÖ¸¶¨»õ±ÒµÄÃû×Ö
-    Èç¹ûÎª null Ôò´ú±íÖ¸¶¨»õ±Ò²»´æÔÚ
-    */
-    public static String getCostName(String costId){
-        if(costMap.containsKey(costId)){
-            return costMap.get(costId);
-        }
-        return null;
-    }
-
-    /*
-    »õ±ÒÃû @costName
-    »ñÈ¡Ö¸¶¨»õ±ÒÃû¶ÔÓ¦µÄ»õ±Òid
-    ·µ»Ø String ÎªÖ¸¶¨»õ±ÒµÄid
-    Èç¹ûÎª null Ôò´ú±íÃ»ÓĞÈÎºÎ»õ±ÒµÄÃû×ÖÎªÖ¸¶¨»õ±ÒÃû
-    */
-    public static String getCostId(String costName){
-        costName = costName.replace('&',ChatColor.COLOR_CHAR);
-        for(String key:costMap.keySet()){
-            String name = costMap.get(key);
-            if(name.equalsIgnoreCase(costName)) return name;
-        }
-        return null;
-    }
-}
+package com.killercraft.jimy;import com.killercraft.jimy.Utils.CSCostUtil;import org.bukkit.ChatColor;import org.bukkit.configuration.file.FileConfiguration;import java.io.File;import java.io.IOException;import java.util.HashMap;import java.util.Iterator;import java.util.Map;import static com.killercraft.jimy.ConfigManager.CSConfig.load;import static com.killercraft.jimy.CustomShop.*;import static com.killercraft.jimy.MySQL.CustomShopDatabase.enableMySQL;public class CustomShopAPI {    /*    ç©å®¶å @name è´§å¸id @costId æ•°é‡ @i    ç»™äºˆæŒ‡å®šç©å®¶åæŒ‡å®šæ•°é‡çš„æŒ‡å®šè´§å¸     */    public static void giveCost(String name, String costId, int i) {        CSCostUtil.giveCost(name, costId, i);    }    /*    ç©å®¶å @name è´§å¸id @costId æ•°é‡ @i    æ‹¿å–æŒ‡å®šç©å®¶åæŒ‡å®šæ•°é‡çš„æŒ‡å®šè´§å¸    è¿”å› boolean    true ä»£è¡¨ æ‰£å–æˆåŠŸ    false åˆ™ä»£è¡¨ç©å®¶æŒ‡å®šè´§å¸æ•°é‡ä¸å¤Ÿ å¹¶ä¸ä¼šæ‰£å–è´§å¸     */    public static boolean takeCost(String name, String costId, int i) {        return CSCostUtil.takeCost(name, costId, i);    }    /*    ç©å®¶å @name è´§å¸id @costId æ•°é‡ @i    åˆ é™¤æŒ‡å®šç©å®¶åæŒ‡å®šæ•°é‡çš„æŒ‡å®šè´§å¸    å¦‚æœç©å®¶è´§å¸ä¸è¶³æ­¤å¤„å¡«å†™çš„æ•°é‡ åˆ™ç›´æ¥è®¾ä¸º 0    */    public static void delCost(String name, String costId, int i) {        CSCostUtil.delCost(name, costId, i);    }    /*    ç©å®¶å @name è´§å¸id @costId    æŸ¥çœ‹æŒ‡å®šç©å®¶åæŒ‡å®šè´§å¸    è¿”å› int ä¸ºè¯¥è´§å¸ä½™é¢    */    public static int checkCost(String name, String costId) {        return CSCostUtil.checkCost(name, costId);    }    /*    è´§å¸id @costId è´§å¸å @costName    ç›´æ¥åˆ›å»ºä¸€ç§æ–°çš„è´§å¸ å¹¶ä¿®æ”¹è¯¥æ’ä»¶configæ–°å¢è´§å¸    è¿”å› boolean    true ä»£è¡¨ åˆ›å»ºæˆåŠŸ    false åˆ™ä»£è¡¨é‡å¤çš„è´§å¸idå·²å­˜åœ¨    */    public static boolean createCost(String costId, String costName) {        costName = costName.replace('&', ChatColor.COLOR_CHAR);        if (!enableMySQL) {            if (!costMap.containsKey(costId)) {                costMap.put(costId, costName);                File file = new File(CustomShop.root, "config.yml");                FileConfiguration config = load(file);                config.set("Costs." + costId, costName.replace(ChatColor.COLOR_CHAR, '&'));                try {                    config.save(file);                } catch (IOException e) {                    e.printStackTrace();                }                return true;            } else {                return false;            }        } else {            return csb.insertNewCost(costId, costName);        }    }    /*    è´§å¸id @costId è´§å¸å @costName    ä¿®æ”¹ä¸€ç§å·²å­˜åœ¨çš„è´§å¸idçš„è´§å¸å å¹¶ä¿®æ”¹è¯¥æ’ä»¶configæ”¹åè´§å¸    è¿”å› boolean    true ä»£è¡¨ åç§°ä¿®æ”¹æˆåŠŸ    false åˆ™ä»£è¡¨è´§å¸idä¸å­˜åœ¨    */    public static boolean renameCost(String costId, String costName) {        costName = costName.replace('&', ChatColor.COLOR_CHAR);        if (!enableMySQL) {            if (costMap.containsKey(costId)) {                costMap.put(costId, costName);                File file = new File(CustomShop.root, "config.yml");                FileConfiguration config = load(file);                config.set("Costs." + costId, costName.replace(ChatColor.COLOR_CHAR, '&'));                try {                    config.save(file);                } catch (IOException e) {                    e.printStackTrace();                }                return true;            } else return false;        } else return csb.updateCost(costId, costName);    }    /*    è´§å¸id @costId  æ˜¯å¦æ¸…ç†ä½™é¢ @clear    åˆ é™¤ä¸€ç§å·²å­˜åœ¨çš„è´§å¸id å¹¶ä¿®æ”¹è¯¥æ’ä»¶configåˆ é™¤è´§å¸    è¿”å› boolean    true ä»£è¡¨ åç§°åˆ é™¤æˆåŠŸ    false åˆ™ä»£è¡¨è´§å¸idä¸å­˜åœ¨    */    public static boolean deleteCost(String costId, boolean clear) {        if (!enableMySQL) {            if (costMap.containsKey(costId)) {                costMap.remove(costId);                if (clear) clearCost(costId);                File file = new File(CustomShop.root, "config.yml");                FileConfiguration config = load(file);                config.set("Costs." + costId, null);                try {                    config.save(file);                } catch (IOException e) {                    e.printStackTrace();                }                return true;            } else return false;        } else {            if (clear) csb.clearCost(costId);            return csb.deleteCosts(costId);        }    }    /*    è´§å¸id @costId    æ¸…ç†ç°æ‰€æœ‰ç©å®¶çš„æ•°æ®ä¸­çš„æŒ‡å®šè´§å¸idçš„æ•°é‡    */    public static void clearCost(String costId) {        Iterator<Map.Entry<String, HashMap<String, Integer>>> it1 = playerData.entrySet().iterator();        while (it1.hasNext()) {            Map.Entry<String, HashMap<String, Integer>> e1 = it1.next();            HashMap<String, Integer> map1 = e1.getValue();            map1.entrySet().removeIf(e2 -> e2.getKey().equalsIgnoreCase(costId));            if (map1.size() < 1) {                it1.remove();            } else {                e1.setValue(map1);            }        }    }    /*    è´§å¸id @costId    è·å–æŒ‡å®šè´§å¸idçš„åå­—    è¿”å› String ä¸ºæŒ‡å®šè´§å¸çš„åå­—    å¦‚æœä¸º null åˆ™ä»£è¡¨æŒ‡å®šè´§å¸ä¸å­˜åœ¨    */    public static String getCostName(String costId) {        if (costMap.containsKey(costId)) {            return costMap.get(costId);        }        return null;    }    /*    è´§å¸å @costName    è·å–æŒ‡å®šè´§å¸åå¯¹åº”çš„è´§å¸id    è¿”å› String ä¸ºæŒ‡å®šè´§å¸çš„id    å¦‚æœä¸º null åˆ™ä»£è¡¨æ²¡æœ‰ä»»ä½•è´§å¸çš„åå­—ä¸ºæŒ‡å®šè´§å¸å    */    public static String getCostId(String costName) {        costName = costName.replace('&', ChatColor.COLOR_CHAR);        for (String key : costMap.keySet()) {            String name = costMap.get(key);            if (name.equalsIgnoreCase(costName)) return name;        }        return null;    }}

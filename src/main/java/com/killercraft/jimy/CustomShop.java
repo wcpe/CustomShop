@@ -1,7 +1,7 @@
 package com.killercraft.jimy;
 
-import com.killercraft.jimy.Listeners.CSItemUseListener;
 import com.killercraft.jimy.Listeners.CSInvListener;
+import com.killercraft.jimy.Listeners.CSItemUseListener;
 import com.killercraft.jimy.Listeners.CSPlayerListener;
 import com.killercraft.jimy.Manager.CSPAPIHooker;
 import com.killercraft.jimy.Manager.GuiShop;
@@ -35,273 +35,286 @@ import static com.killercraft.jimy.Utils.CSCostUtil.giveCost;
 import static com.killercraft.jimy.Utils.CSUtil.*;
 
 public final class CustomShop extends JavaPlugin {
-
+    private static final HashSet<String> safetyLock = new HashSet<>();
+    private static final HashSet<String> safetyLock2 = new HashSet<>();
     public static String root;
-
     public static CustomShopDatabase csb;
-
     public static Economy economy;
     public static PlayerPointsAPI poi;
     public static boolean poiLoad;
     public static Plugin plugin;
-
     public static HashSet<Player> editSet = new HashSet<>();
-
     public static HashSet<String> cancelSet = new HashSet<>();
-    public static HashMap<Player,Integer> invClickCooldownMap = new HashMap<>();
-
-    public static HashMap<String,String> langMap = new HashMap<>();
-    public static HashMap<String,String> costMap = new HashMap<>();
-    public static HashMap<String,HashMap<String,Integer>> playerData = new HashMap<>();
-    public static HashMap<String,GuiShop> customShops = new HashMap<>();
-    public static HashMap<String,Integer> refreshShops = new HashMap<>();
-
-    public static HashMap<String,HashMap<String,Integer>> limitData = new HashMap<>();
-
-    private static HashSet<String> safetyLock = new HashSet<>();
-    private static HashSet<String> safetyLock2 = new HashSet<>();
-
-
+    public static HashMap<Player, Integer> invClickCooldownMap = new HashMap<>();
+    public static HashMap<String, String> langMap = new HashMap<>();
+    public static HashMap<String, String> costMap = new HashMap<>();
+    public static HashMap<String, HashMap<String, Integer>> playerData = new HashMap<>();
+    public static HashMap<String, GuiShop> customShops = new HashMap<>();
+    public static HashMap<String, Integer> refreshShops = new HashMap<>();
+    public static HashMap<String, HashMap<String, Integer>> limitData = new HashMap<>();
     public static int day;
-
 
     @Override
     public void onEnable() {
         plugin = Bukkit.getPluginManager().getPlugin("CustomShop");
         Plugin papi = Bukkit.getPluginManager().getPlugin("PlaceholderAPI");
-        if(papi != null){
+        if (papi != null) {
             boolean isLoadPAPI = new CSPAPIHooker().register();
-            if(isLoadPAPI){
+            if (isLoadPAPI) {
                 System.out.println("[CustomShop]Placeholder API Loaded!");
-            }else{
+            } else {
                 System.out.println("[CustomShop]Placeholder API Unloaded!");
             }
         }
         root = getDataFolder().getAbsolutePath();
         setupEconomy();
         PlayerPoints points = (PlayerPoints) Bukkit.getPluginManager().getPlugin("PlayerPoints");
-        if(points != null){
+        if (points != null) {
             poi = points.getAPI();
             poiLoad = true;
             System.out.println("[CustomShop]Player Points Loaded!");
-        }else{
+        } else {
             poiLoad = false;
             System.out.println("[CustomShop]Player Points Unloaded!");
         }
         saveDefaultConfig();
         update();
-        Bukkit.getScheduler().runTaskTimerAsynchronously(this,new CSSaveDataRunnable(),6000,6000);
-        Bukkit.getScheduler().runTaskTimerAsynchronously(this,new CustomShopSQLUpdate(),40,400);
-        Bukkit.getScheduler().runTaskTimerAsynchronously(this,new CSInvCooldown(),2,2);
-        Bukkit.getPluginManager().registerEvents(new CSInvListener(),this);
-        Bukkit.getPluginManager().registerEvents(new CSItemUseListener(),this);
-        Bukkit.getPluginManager().registerEvents(new CSPlayerListener(),this);
-
+        Bukkit.getScheduler().runTaskTimerAsynchronously(this, new CSSaveDataRunnable(), 6000, 6000);
+        Bukkit.getScheduler().runTaskTimerAsynchronously(this, new CustomShopSQLUpdate(), 40, 400);
+        Bukkit.getScheduler().runTaskTimerAsynchronously(this, new CSInvCooldown(), 2, 2);
+        Bukkit.getPluginManager().registerEvents(new CSInvListener(), this);
+        Bukkit.getPluginManager().registerEvents(new CSItemUseListener(), this);
+        Bukkit.getPluginManager().registerEvents(new CSPlayerListener(), this);
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if(label.equalsIgnoreCase("cshop")){
-            if(sender instanceof Player){
+        if (label.equalsIgnoreCase("cshop")) {
+            if (sender instanceof Player) {
                 Player player = (Player) sender;
-                if(args.length < 1){
-                    if(player.isOp()){
-                        player.sendMessage(ChatColor.GREEN+"=============CustomShop=============");
-                        player.sendMessage(ChatColor.AQUA+"/cshop reload "+ChatColor.GRAY+"- ÖØÔØ²å¼þÅäÖÃ");
-                        player.sendMessage(ChatColor.AQUA+"/cshop list "+ChatColor.GRAY+"- ²é¿´µ±Ç°ËùÓÐµÄÉÌµê");
-                        player.sendMessage(ChatColor.AQUA+"/cshop open ¡ìeÉÌµêÃû¡ìb"+ChatColor.GRAY+"- ´ò¿ªÖ¸¶¨ÉÌµê");
-                        player.sendMessage(ChatColor.AQUA+"/cshop open ¡ìeÉÌµêÃû¡ìb ¡ì9Íæ¼ÒÃû¡ìb"+ChatColor.GRAY+"- ÎªÖ¸¶¨Íæ¼Ò´ò¿ªÖ¸¶¨ÉÌµê");
-                        player.sendMessage(ChatColor.AQUA+"/cshop edit ¡ìeÉÌµêÃû¡ìb"+ChatColor.GRAY+"- ±à¼­Ö¸¶¨ÉÌµê");
-                        player.sendMessage(ChatColor.AQUA+"/cshop editmode"+ChatColor.GRAY+"- ¿ªÆô/¹Ø±ÕÉÌµê±à¼­Ä£Ê½£¬±à¼­Ä£Ê½ÏÂÄú´ò¿ªÈÎºÎÉÌµêÔòÖ±½Ó´ò¿ª´ËÉÌµêµÄ±à¼­½çÃæ");
-                        player.sendMessage(ChatColor.AQUA+"/cshop refresh ¡ìeÉÌµêÃû¡ìb"+ChatColor.GRAY+"- Ë¢ÐÂ¸ÃÉÌµê");
-                        player.sendMessage(ChatColor.AQUA+"/cshop create ¡ìeÉÌµêÃû¡ìb ¡ì6ÐÐÊý¡ìb"+ChatColor.GRAY+"- ´´½¨Ò»¸ö½çÃæÓÐÖ¸¶¨ÐÐÊýµÄÉÌµê£¬×¢ÒâÉÌµêÃû¹ý³¤»á±¨´í");
-                        player.sendMessage(ChatColor.AQUA+"/cshop delete ¡ìeÉÌµêÃû¡ìb"+ChatColor.GRAY+"- É¾³ýÖ¸¶¨ÉÌµê");
-                        player.sendMessage(ChatColor.AQUA+"/cshop costs"+ChatColor.GRAY+"- ²é¿´×Ô¼ºÒÑÓµÓÐµÄËùÓÐ»õ±Ò");
-                        player.sendMessage(ChatColor.AQUA+"/cshop givecost ¡ì9Íæ¼ÒÃû¡ìb ¡ìe»õ±Òid¡ìb ¡ì6ÊýÁ¿¡ìb"+ChatColor.GRAY+"- ÎªÖ¸¶¨Íæ¼ÒÌí¼ÓÖ¸¶¨»õ±ÒidµÄ»õ±Ò");
-                        player.sendMessage(ChatColor.AQUA+"/cshop takecost ¡ì9Íæ¼ÒÃû¡ìb ¡ìe»õ±Òid¡ìb ¡ì6ÊýÁ¿¡ìb"+ChatColor.GRAY+"- ÎªÖ¸¶¨Íæ¼Ò¼õÉÙÖ¸¶¨»õ±ÒidµÄ»õ±Ò");
-                        player.sendMessage(ChatColor.AQUA+"/cshop seecost ¡ì9Íæ¼ÒÃû¡ìb ¡ìe»õ±Òid¡ìb"+ChatColor.GRAY+"- ²é¿´Ö¸¶¨Íæ¼ÒµÄÖ¸¶¨»õ±ÒidµÄ»õ±ÒÓà¶î");
-                        player.sendMessage(ChatColor.AQUA+"/cshop cost list"+ChatColor.GRAY+"- ²é¿´ÏÖÓÐµÄ»õ±ÒidÓë¶ÔÓ¦µÄ»õ±ÒÃû");
-                        player.sendMessage(ChatColor.AQUA+"/cshop cost create ¡ìe»õ±Òid¡ìb ¡ìd»õ±ÒÃû¡ìb"+ChatColor.GRAY+"- ´´½¨Ò»ÖÖÐÂµÄ»õ±Ò");
-                        player.sendMessage(ChatColor.AQUA+"/cshop cost rename ¡ìe»õ±Òid¡ìb ¡ìd»õ±ÒÃû¡ìb"+ChatColor.GRAY+"- ÐÞ¸ÄÒ»ÖÖ»õ±ÒµÄÃû×Ö");
-                        player.sendMessage(ChatColor.AQUA+"/cshop cost delete ¡ìe»õ±Òid¡ìb true/false[ÊÇ·ñÇå¿ÕÓà¶î]"+ChatColor.GRAY+"- É¾³ýÒ»ÖÖÒÑ´æÔÚµÄ»õ±Ò");
-                        player.sendMessage(ChatColor.AQUA+"/cshop cost clear ¡ìe»õ±Òid¡ìb"+ChatColor.GRAY+"- Çå¿ÕËùÓÐµÄÍæ¼ÒÊý¾ÝÖÐµÄÖ¸¶¨»õ±ÒÓà¶î");
-                        player.sendMessage(ChatColor.GREEN+"=============CustomShop=============");
-                        player.sendMessage(ChatColor.RED+"¡ì9×÷ÕßQQ:¡ìb2506678176 ¡ì7- ¡ìaÐÔÄÜÓë±ãÀûÖÁÉÏ¡ìc[´ËÐÐÏûÏ¢Óë¹ÜÀíÔ±ÃüÁî½öOP¿É¼û]");
-                    }else{
-                        player.sendMessage(ChatColor.GREEN+"=============CustomShop=============");
-                        player.sendMessage(ChatColor.AQUA+"/cshop open ¡ìeÉÌµêÃû¡ìb"+ChatColor.GRAY+"- ´ò¿ªÖ¸¶¨ÉÌµê");
-                        player.sendMessage(ChatColor.AQUA+"/cshop costs"+ChatColor.GRAY+"- ²é¿´×Ô¼ºÒÑÓµÓÐµÄËùÓÐ»õ±Ò");
-                        player.sendMessage(ChatColor.GREEN+"=============CustomShop=============");
+                if (args.length < 1) {
+                    if (player.isOp()) {
+                        player.sendMessage(ChatColor.GREEN + "=============CustomShop=============");
+                        player.sendMessage(ChatColor.AQUA + "/cshop reload " + ChatColor.GRAY + "- é‡è½½æ’ä»¶é…ç½®");
+                        player.sendMessage(ChatColor.AQUA + "/cshop list " + ChatColor.GRAY + "- æŸ¥çœ‹å½“å‰æ‰€æœ‰çš„å•†åº—");
+                        player.sendMessage(ChatColor.AQUA + "/cshop open Â§eå•†åº—åÂ§b" + ChatColor.GRAY + "- æ‰“å¼€æŒ‡å®šå•†åº—");
+                        player.sendMessage(ChatColor.AQUA + "/cshop open Â§eå•†åº—åÂ§b Â§9çŽ©å®¶åÂ§b" + ChatColor.GRAY + "- ä¸ºæŒ‡å®šçŽ©å®¶æ‰“å¼€æŒ‡å®šå•†åº—");
+                        player.sendMessage(ChatColor.AQUA + "/cshop edit Â§eå•†åº—åÂ§b" + ChatColor.GRAY + "- ç¼–è¾‘æŒ‡å®šå•†åº—");
+                        player.sendMessage(ChatColor.AQUA + "/cshop editmode" + ChatColor.GRAY + "- å¼€å¯/å…³é—­å•†åº—ç¼–è¾‘æ¨¡å¼ï¼Œç¼–è¾‘æ¨¡å¼ä¸‹æ‚¨æ‰“å¼€ä»»ä½•å•†åº—åˆ™ç›´æŽ¥æ‰“å¼€æ­¤å•†åº—çš„ç¼–è¾‘ç•Œé¢");
+                        player.sendMessage(ChatColor.AQUA + "/cshop refresh Â§eå•†åº—åÂ§b" + ChatColor.GRAY + "- åˆ·æ–°è¯¥å•†åº—");
+                        player.sendMessage(ChatColor.AQUA + "/cshop create Â§eå•†åº—åÂ§b Â§6è¡Œæ•°Â§b" + ChatColor.GRAY + "- åˆ›å»ºä¸€ä¸ªç•Œé¢æœ‰æŒ‡å®šè¡Œæ•°çš„å•†åº—ï¼Œæ³¨æ„å•†åº—åè¿‡é•¿ä¼šæŠ¥é”™");
+                        player.sendMessage(ChatColor.AQUA + "/cshop delete Â§eå•†åº—åÂ§b" + ChatColor.GRAY + "- åˆ é™¤æŒ‡å®šå•†åº—");
+                        player.sendMessage(ChatColor.AQUA + "/cshop costs" + ChatColor.GRAY + "- æŸ¥çœ‹è‡ªå·±å·²æ‹¥æœ‰çš„æ‰€æœ‰è´§å¸");
+                        player.sendMessage(ChatColor.AQUA + "/cshop givecost Â§9çŽ©å®¶åÂ§b Â§eè´§å¸idÂ§b Â§6æ•°é‡Â§b" + ChatColor.GRAY + "- ä¸ºæŒ‡å®šçŽ©å®¶æ·»åŠ æŒ‡å®šè´§å¸idçš„è´§å¸");
+                        player.sendMessage(ChatColor.AQUA + "/cshop takecost Â§9çŽ©å®¶åÂ§b Â§eè´§å¸idÂ§b Â§6æ•°é‡Â§b" + ChatColor.GRAY + "- ä¸ºæŒ‡å®šçŽ©å®¶å‡å°‘æŒ‡å®šè´§å¸idçš„è´§å¸");
+                        player.sendMessage(ChatColor.AQUA + "/cshop seecost Â§9çŽ©å®¶åÂ§b Â§eè´§å¸idÂ§b" + ChatColor.GRAY + "- æŸ¥çœ‹æŒ‡å®šçŽ©å®¶çš„æŒ‡å®šè´§å¸idçš„è´§å¸ä½™é¢");
+                        player.sendMessage(ChatColor.AQUA + "/cshop cost list" + ChatColor.GRAY + "- æŸ¥çœ‹çŽ°æœ‰çš„è´§å¸idä¸Žå¯¹åº”çš„è´§å¸å");
+                        player.sendMessage(ChatColor.AQUA + "/cshop cost create Â§eè´§å¸idÂ§b Â§dè´§å¸åÂ§b" + ChatColor.GRAY + "- åˆ›å»ºä¸€ç§æ–°çš„è´§å¸");
+                        player.sendMessage(ChatColor.AQUA + "/cshop cost rename Â§eè´§å¸idÂ§b Â§dè´§å¸åÂ§b" + ChatColor.GRAY + "- ä¿®æ”¹ä¸€ç§è´§å¸çš„åå­—");
+                        player.sendMessage(ChatColor.AQUA + "/cshop cost delete Â§eè´§å¸idÂ§b true/false[æ˜¯å¦æ¸…ç©ºä½™é¢]" + ChatColor.GRAY + "- åˆ é™¤ä¸€ç§å·²å­˜åœ¨çš„è´§å¸");
+                        player.sendMessage(ChatColor.AQUA + "/cshop cost clear Â§eè´§å¸idÂ§b" + ChatColor.GRAY + "- æ¸…ç©ºæ‰€æœ‰çš„çŽ©å®¶æ•°æ®ä¸­çš„æŒ‡å®šè´§å¸ä½™é¢");
+                        player.sendMessage(ChatColor.GREEN + "=============CustomShop=============");
+                        player.sendMessage(ChatColor.RED + "Â§9ä½œè€…QQ:Â§b2506678176 Â§7- Â§aæ€§èƒ½ä¸Žä¾¿åˆ©è‡³ä¸ŠÂ§c[æ­¤è¡Œæ¶ˆæ¯ä¸Žç®¡ç†å‘˜å‘½ä»¤ä»…OPå¯è§]");
+                    } else {
+                        player.sendMessage(ChatColor.GREEN + "=============CustomShop=============");
+                        player.sendMessage(ChatColor.AQUA + "/cshop open Â§eå•†åº—åÂ§b" + ChatColor.GRAY + "- æ‰“å¼€æŒ‡å®šå•†åº—");
+                        player.sendMessage(ChatColor.AQUA + "/cshop costs" + ChatColor.GRAY + "- æŸ¥çœ‹è‡ªå·±å·²æ‹¥æœ‰çš„æ‰€æœ‰è´§å¸");
+                        player.sendMessage(ChatColor.GREEN + "=============CustomShop=============");
                     }
                 }
-                if(args.length == 1 && args[0].equalsIgnoreCase("reload")){
-                    if(!player.isOp()) return true;
+                if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
+                    if (!player.isOp()) {
+                        return true;
+                    }
                     CSUtil.reloadConfig(player);
-                }else if(args.length == 1 && args[0].equalsIgnoreCase("list")){
-                    if(!player.isOp()) return true;
-                    sendList(player,null);
-                }else if(args.length == 2 && args[0].equalsIgnoreCase("list")){
-                    if(!player.isOp()) return true;
-                    sendList(player,args[1]);
-                }else if(args.length == 2 && args[0].equalsIgnoreCase("open")){
+                } else if (args.length == 1 && args[0].equalsIgnoreCase("list")) {
+                    if (!player.isOp()) {
+                        return true;
+                    }
+                    sendList(player, null);
+                } else if (args.length == 2 && args[0].equalsIgnoreCase("list")) {
+                    if (!player.isOp()) {
+                        return true;
+                    }
+                    sendList(player, args[1]);
+                } else if (args.length == 2 && args[0].equalsIgnoreCase("open")) {
                     //openShop(player,args[1]);
-                    if(player.hasPermission("customshop.open."+args[1])) {
-                        openShop(player,args[1]);
-                    }else player.sendMessage(langMap.get("NoPermisson").replace("<perm>","customshop.open."+args[1]));
-                }else if(args.length == 3 && args[0].equalsIgnoreCase("open")){
-                    if(!player.isOp()) return true;
+                    if (player.hasPermission("customshop.open." + args[1])) {
+                        openShop(player, args[1]);
+                    } else {
+                        player.sendMessage(langMap.get("NoPermisson").replace("<perm>", "customshop.open." + args[1]));
+                    }
+                } else if (args.length == 3 && args[0].equalsIgnoreCase("open")) {
+                    if (!player.isOp()) return true;
                     Player players = Bukkit.getPlayer(args[2]);
-                    if(players == null) return true;
-                    openShop(players,args[1]);
-                }else if(args.length == 2 && args[0].equalsIgnoreCase("edit")){
-                    if(!player.isOp()) return true;
-                    openEditInv(player,args[1]);
-                }else if(args.length == 2 && args[0].equalsIgnoreCase("testprint")){
-                    if(!player.isOp()) return true;
+                    if (players == null) {
+                        return true;
+                    }
+                    openShop(players, args[1]);
+                } else if (args.length == 2 && args[0].equalsIgnoreCase("edit")) {
+                    if (!player.isOp()) {
+                        return true;
+                    }
+                    openEditInv(player, args[1]);
+                } else if (args.length == 2 && args[0].equalsIgnoreCase("testprint")) {
+                    if (!player.isOp()) return true;
                     ItemStack stack = player.getItemInHand();
                     try {
-                        player.sendMessage(stack.getItemMeta().getDisplayName().replace(ChatColor.COLOR_CHAR+"","#"));
-                    }catch (Throwable e){
+                        player.sendMessage(stack.getItemMeta().getDisplayName().replace(ChatColor.COLOR_CHAR + "", "#"));
+                    } catch (Throwable e) {
                         player.sendMessage("wu pin mei you ming zi");
                     }
-                }else if(args.length == 2 && args[0].equalsIgnoreCase("refresh")){
-                    if(!player.isOp()) return true;
-                    refreshShop(player,args[1],true);
-                }else if(args.length == 3 && args[0].equalsIgnoreCase("create")){
-                    if(!player.isOp()) return true;
-                    createShop(player,args);
-                }else if(args.length == 2 && args[0].equalsIgnoreCase("delete")){
-                    if(!player.isOp()) return true;
-                    deleteShop(player,args[1]);
-                }else if(args.length == 1 && args[0].equalsIgnoreCase("costs")){
+                } else if (args.length == 2 && args[0].equalsIgnoreCase("refresh")) {
+                    if (!player.isOp()) {
+                        return true;
+                    }
+                    refreshShop(player, args[1], true);
+                } else if (args.length == 3 && args[0].equalsIgnoreCase("create")) {
+                    if (!player.isOp()) {
+                        return true;
+                    }
+                    createShop(player, args);
+                } else if (args.length == 2 && args[0].equalsIgnoreCase("delete")) {
+                    if (!player.isOp()) {
+                        return true;
+                    }
+                    deleteShop(player, args[1]);
+                } else if (args.length == 1 && args[0].equalsIgnoreCase("costs")) {
                     sendCosts(player);
-                }else if(args.length >= 2 && args[0].equalsIgnoreCase("cost")){
-                    if(player.isOp()) {
-                        if(args[1].equalsIgnoreCase("create") && args.length == 4){
-                            if(createCost(args[2],args[3])){
+                } else if (args.length >= 2 && args[0].equalsIgnoreCase("cost")) {
+                    if (player.isOp()) {
+                        if (args[1].equalsIgnoreCase("create") && args.length == 4) {
+                            if (createCost(args[2], args[3])) {
                                 player.sendMessage(langMap.get("CostCreate"));
-                            }else player.sendMessage(langMap.get("CostCreateNull"));
-                        }else if(args[1].equalsIgnoreCase("delete") && args.length == 4){
-                            if(deleteCost(args[2],Boolean.getBoolean(args[3]))){
+                            } else {
+                                player.sendMessage(langMap.get("CostCreateNull"));
+                            }
+                        } else if (args[1].equalsIgnoreCase("delete") && args.length == 4) {
+                            if (deleteCost(args[2], Boolean.getBoolean(args[3]))) {
                                 player.sendMessage(langMap.get("CostDelete"));
-                            }else player.sendMessage(langMap.get("CostDeleteNull"));
-                        }else if(args[1].equalsIgnoreCase("clear") && args.length == 3){
+                            } else {
+                                player.sendMessage(langMap.get("CostDeleteNull"));
+                            }
+                        } else if (args[1].equalsIgnoreCase("clear") && args.length == 3) {
                             clearCost(args[2]);
                             player.sendMessage(langMap.get("CostClear"));
-                        }else if(args[1].equalsIgnoreCase("rename") && args.length == 4){
-                            if(renameCost(args[2],args[3])){
+                        } else if (args[1].equalsIgnoreCase("rename") && args.length == 4) {
+                            if (renameCost(args[2], args[3])) {
                                 player.sendMessage(langMap.get("CostRename"));
-                            }else player.sendMessage(langMap.get("CostRenameNull"));
-                        }else if(args[1].equalsIgnoreCase("list")){
+                            } else player.sendMessage(langMap.get("CostRenameNull"));
+                        } else if (args[1].equalsIgnoreCase("list")) {
                             sendCostList(player);
                         }
                     }
-                }else if(args.length == 1 && args[0].equalsIgnoreCase("editmode")){
-                    if(!player.isOp()) return true;
-                    if(editSet.contains(player)){
+                } else if (args.length == 1 && args[0].equalsIgnoreCase("editmode")) {
+                    if (!player.isOp()) return true;
+                    if (editSet.contains(player)) {
                         editSet.remove(player);
-                        player.sendMessage("¡ìf[¡ìaCustomShop¡ìf]¡ìaÄúÒÑ ¡ìc¹Ø±Õ ¡ìa±à¼­Ä£Ê½£¡");
-                    }else{
+                        player.sendMessage("Â§f[Â§aCustomShopÂ§f]Â§aæ‚¨å·² Â§cå…³é—­ Â§aç¼–è¾‘æ¨¡å¼ï¼");
+                    } else {
                         editSet.add(player);
-                        player.sendMessage("¡ìf[¡ìaCustomShop¡ìf]¡ìaÄúÒÑ ¡ìb¿ªÆô ¡ìa±à¼­Ä£Ê½£¡");
-
+                        player.sendMessage("Â§f[Â§aCustomShopÂ§f]Â§aæ‚¨å·² Â§bå¼€å¯ Â§aç¼–è¾‘æ¨¡å¼ï¼");
                     }
-                }else if(args.length == 4 && args[0].equalsIgnoreCase("givecost")){
-                    if(!player.isOp()) return true;
-                    String msg = giveCost(args[1],args[2],Integer.parseInt(args[3]));
-                    if(msg == null) return true;
+                } else if (args.length == 4 && args[0].equalsIgnoreCase("givecost")) {
+                    if (!player.isOp()) {
+                        return true;
+                    }
+                    String msg = giveCost(args[1], args[2], Integer.parseInt(args[3]));
+                    if (msg == null) return true;
                     player.sendMessage(msg);
-                }else if(args.length == 3 && args[0].equalsIgnoreCase("seecost")){
-                    if(!player.isOp()) return true;
-                    int i = checkCost(args[1],args[2]);
-                    player.sendMessage("¡ìf[¡ìaCustomShop¡ìf]¡ìb´ËÍæ¼Ò¸Ã»õ±ÒÓà¶î»¹Ê£ ¡ìa"+i);
-                }else if(args.length == 4 && args[0].equalsIgnoreCase("takecost")){
-                    if(!player.isOp()) return true;
-                    String msg = delCost(args[1],args[2],Integer.parseInt(args[3]));
-                    if(msg == null) return true;
+                } else if (args.length == 3 && args[0].equalsIgnoreCase("seecost")) {
+                    if (!player.isOp()) return true;
+                    int i = checkCost(args[1], args[2]);
+                    player.sendMessage("Â§f[Â§aCustomShopÂ§f]Â§bæ­¤çŽ©å®¶è¯¥è´§å¸ä½™é¢è¿˜å‰© Â§a" + i);
+                } else if (args.length == 4 && args[0].equalsIgnoreCase("takecost")) {
+                    if (!player.isOp()) {
+                        return true;
+                    }
+                    String msg = delCost(args[1], args[2], Integer.parseInt(args[3]));
+                    if (msg == null) return true;
                     player.sendMessage(msg);
-                }else if(args.length == 2 && args[0].equalsIgnoreCase("upload")){
-                    if(!player.isOp()) return true;
+                } else if (args.length == 2 && args[0].equalsIgnoreCase("upload")) {
+                    if (!player.isOp()) return true;
                     String pName = player.getName();
-                    if(args[1].equalsIgnoreCase("shops")) {
+                    if (args[1].equalsIgnoreCase("shops")) {
                         if (!safetyLock.contains(pName)) {
                             player.sendMessage(ChatColor.GREEN + "=============CustomShop=============");
-                            player.sendMessage(ChatColor.RED + "¾¯¸æ:¸Ã¹¦ÄÜµÄ×÷ÓÃÊÇ½«Äã¸Ã·þÎñ¶ËµÄÉÌµêÓë»õ±ÒÅäÖÃ");
-                            player.sendMessage(ChatColor.RED + "(½öÉÌµêÓë»õ±ÒÅäÖÃ)ÉÏ´«ÖÁÊý¾Ý¿âÖÐ²¢É¾³ýÔ­ÓÐÊý¾Ý");
-                            player.sendMessage(ChatColor.BLUE + "¸Ã¹¦ÄÜÖ»ÊÇÌá¹©¸ø´Óµ¥¶Ë×ªÎªÊý¾Ý¿âµÄÓÃ»§ÃÇÊ¹ÓÃµÄ£¡");
-                            player.sendMessage(ChatColor.RED + "Èç¹û·þÎñ¶ËÎÞÅäÖÃÈÎºÎÉÌµêÒÔ¼°»õ±ÒÄÇÇë²»ÒªÊ¹ÓÃ¸Ã¹¦ÄÜ");
-                            player.sendMessage(ChatColor.RED + "·ñÔò¿ÉÄÜ»áµ¼ÖÂÊý¾Ý¿âÄÚÉÌµê¼°»õ±Ò±»Çå¿Õ»òÕß±»ÐÞ¸Ä£¡");
-                            player.sendMessage(ChatColor.GREEN + "Èç¹ûÈ·¶¨¿ªÆôÊý¾Ý¿âÆôÓÃÑ¡ÏîÖ®Ç°·þÎñ¶ËÓÐÉÌµê¼°»õ±ÒÅäÖÃ");
-                            player.sendMessage(ChatColor.GREEN + "²¢ÇÒÕâÐ©ÅäÖÃÊÇÄúÏëÒªÉÏ´«ÖÁÊý¾Ý¿âµÄÉÌµê¼°»õ±ÒÅäÖÃµÄ»°");
-                            player.sendMessage(ChatColor.GREEN + "ÄÇÃ´ÇëÄúÖØÐÂÊäÈë" + ChatColor.AQUA + " /cshop upload shops" + ChatColor.GREEN + "À´Ö´ÐÐÉÏ´«");
+                            player.sendMessage(ChatColor.RED + "è­¦å‘Š:è¯¥åŠŸèƒ½çš„ä½œç”¨æ˜¯å°†ä½ è¯¥æœåŠ¡ç«¯çš„å•†åº—ä¸Žè´§å¸é…ç½®");
+                            player.sendMessage(ChatColor.RED + "(ä»…å•†åº—ä¸Žè´§å¸é…ç½®)ä¸Šä¼ è‡³æ•°æ®åº“ä¸­å¹¶åˆ é™¤åŽŸæœ‰æ•°æ®");
+                            player.sendMessage(ChatColor.BLUE + "è¯¥åŠŸèƒ½åªæ˜¯æä¾›ç»™ä»Žå•ç«¯è½¬ä¸ºæ•°æ®åº“çš„ç”¨æˆ·ä»¬ä½¿ç”¨çš„ï¼");
+                            player.sendMessage(ChatColor.RED + "å¦‚æžœæœåŠ¡ç«¯æ— é…ç½®ä»»ä½•å•†åº—ä»¥åŠè´§å¸é‚£è¯·ä¸è¦ä½¿ç”¨è¯¥åŠŸèƒ½");
+                            player.sendMessage(ChatColor.RED + "å¦åˆ™å¯èƒ½ä¼šå¯¼è‡´æ•°æ®åº“å†…å•†åº—åŠè´§å¸è¢«æ¸…ç©ºæˆ–è€…è¢«ä¿®æ”¹ï¼");
+                            player.sendMessage(ChatColor.GREEN + "å¦‚æžœç¡®å®šå¼€å¯æ•°æ®åº“å¯ç”¨é€‰é¡¹ä¹‹å‰æœåŠ¡ç«¯æœ‰å•†åº—åŠè´§å¸é…ç½®");
+                            player.sendMessage(ChatColor.GREEN + "å¹¶ä¸”è¿™äº›é…ç½®æ˜¯æ‚¨æƒ³è¦ä¸Šä¼ è‡³æ•°æ®åº“çš„å•†åº—åŠè´§å¸é…ç½®çš„è¯");
+                            player.sendMessage(ChatColor.GREEN + "é‚£ä¹ˆè¯·æ‚¨é‡æ–°è¾“å…¥" + ChatColor.AQUA + " /cshop upload shops" + ChatColor.GREEN + "æ¥æ‰§è¡Œä¸Šä¼ ");
                             player.sendMessage(ChatColor.GREEN + "=============CustomShop=============");
                             safetyLock.add(pName);
                         } else {
                             safetyLock.remove(pName);
                             if (enableMySQL) {
                                 upLoadShopCostData();
-                                player.sendMessage(ChatColor.GREEN + "ÉÏ´«Íê±Ï£¡");
-                            } else player.sendMessage(ChatColor.RED + "Äú²¢Ã»ÓÐ¿ªÆôÊý¾Ý¿âÆôÓÃÑ¡Ïî£¡");
+                                player.sendMessage(ChatColor.GREEN + "ä¸Šä¼ å®Œæ¯•ï¼");
+                            } else player.sendMessage(ChatColor.RED + "æ‚¨å¹¶æ²¡æœ‰å¼€å¯æ•°æ®åº“å¯ç”¨é€‰é¡¹ï¼");
                         }
-                    }else if(args[1].equalsIgnoreCase("playerdata")){
+                    } else if (args[1].equalsIgnoreCase("playerdata")) {
                         if (!safetyLock2.contains(pName)) {
                             player.sendMessage(ChatColor.GREEN + "=============CustomShop=============");
-                            player.sendMessage(ChatColor.RED + "¾¯¸æ:¸Ã¹¦ÄÜµÄ×÷ÓÃÊÇ½«Äã¸Ã·þÎñ¶ËµÄÍæ¼ÒµÄ»õ±ÒÅäÖÃ");
-                            player.sendMessage(ChatColor.RED + "(½öÍæ¼ÒµÄ»õ±ÒÅäÖÃ)ÉÏ´«ÖÁÊý¾Ý¿âÖÐ²¢É¾³ýÔ­ÓÐÊý¾Ý");
-                            player.sendMessage(ChatColor.BLUE + "¸Ã¹¦ÄÜÖ»ÊÇÌá¹©¸ø´Óµ¥¶Ë×ªÎªÊý¾Ý¿âµÄÓÃ»§ÃÇÊ¹ÓÃµÄ£¡");
-                            player.sendMessage(ChatColor.RED + "Èç¹û·þÎñ¶ËÎÞÅäÖÃÈÎºÎÍæ¼Ò»õ±ÒÊý¾ÝÄÇÇë²»ÒªÊ¹ÓÃ¸Ã¹¦ÄÜ");
-                            player.sendMessage(ChatColor.RED + "·ñÔò¿ÉÄÜ»áµ¼ÖÂÊý¾Ý¿âÄÚÍæ¼ÒµÄ»õ±Ò±»Çå¿Õ»òÕß±»ÐÞ¸Ä£¡");
-                            player.sendMessage(ChatColor.GREEN + "Èç¹ûÈ·¶¨¿ªÆôÊý¾Ý¿âÆôÓÃÑ¡ÏîÖ®Ç°·þÎñ¶ËÓÐÍæ¼ÒµÄ»õ±ÒÅäÖÃ");
-                            player.sendMessage(ChatColor.GREEN + "²¢ÇÒÕâÐ©ÅäÖÃÊÇÄúÏëÒªÉÏ´«ÖÁÊý¾Ý¿âµÄÍæ¼ÒµÄ»õ±ÒÅäÖÃµÄ»°");
-                            player.sendMessage(ChatColor.RED + "×¢Òâ:ÔÚÉÏ´«Íæ¼ÒÊý¾ÝÖ®Ç°ÇëÏÈÉÏ´«ÉÌµêÓë»õ±ÒÊý¾Ý,·ñÔò¿ÉÄÜµ¼ÖÂ²¿·Ö»õ±Ò²»»áÏÔÊ¾[µ«Êµ¼Ê´æÔÚ]");
-                            player.sendMessage(ChatColor.GREEN + "ÄÇÃ´ÇëÄúÖØÐÂÊäÈë" + ChatColor.AQUA + " /cshop upload playerdata" + ChatColor.GREEN + "À´Ö´ÐÐÉÏ´«");
+                            player.sendMessage(ChatColor.RED + "è­¦å‘Š:è¯¥åŠŸèƒ½çš„ä½œç”¨æ˜¯å°†ä½ è¯¥æœåŠ¡ç«¯çš„çŽ©å®¶çš„è´§å¸é…ç½®");
+                            player.sendMessage(ChatColor.RED + "(ä»…çŽ©å®¶çš„è´§å¸é…ç½®)ä¸Šä¼ è‡³æ•°æ®åº“ä¸­å¹¶åˆ é™¤åŽŸæœ‰æ•°æ®");
+                            player.sendMessage(ChatColor.BLUE + "è¯¥åŠŸèƒ½åªæ˜¯æä¾›ç»™ä»Žå•ç«¯è½¬ä¸ºæ•°æ®åº“çš„ç”¨æˆ·ä»¬ä½¿ç”¨çš„ï¼");
+                            player.sendMessage(ChatColor.RED + "å¦‚æžœæœåŠ¡ç«¯æ— é…ç½®ä»»ä½•çŽ©å®¶è´§å¸æ•°æ®é‚£è¯·ä¸è¦ä½¿ç”¨è¯¥åŠŸèƒ½");
+                            player.sendMessage(ChatColor.RED + "å¦åˆ™å¯èƒ½ä¼šå¯¼è‡´æ•°æ®åº“å†…çŽ©å®¶çš„è´§å¸è¢«æ¸…ç©ºæˆ–è€…è¢«ä¿®æ”¹ï¼");
+                            player.sendMessage(ChatColor.GREEN + "å¦‚æžœç¡®å®šå¼€å¯æ•°æ®åº“å¯ç”¨é€‰é¡¹ä¹‹å‰æœåŠ¡ç«¯æœ‰çŽ©å®¶çš„è´§å¸é…ç½®");
+                            player.sendMessage(ChatColor.GREEN + "å¹¶ä¸”è¿™äº›é…ç½®æ˜¯æ‚¨æƒ³è¦ä¸Šä¼ è‡³æ•°æ®åº“çš„çŽ©å®¶çš„è´§å¸é…ç½®çš„è¯");
+                            player.sendMessage(ChatColor.RED + "æ³¨æ„:åœ¨ä¸Šä¼ çŽ©å®¶æ•°æ®ä¹‹å‰è¯·å…ˆä¸Šä¼ å•†åº—ä¸Žè´§å¸æ•°æ®,å¦åˆ™å¯èƒ½å¯¼è‡´éƒ¨åˆ†è´§å¸ä¸ä¼šæ˜¾ç¤º[ä½†å®žé™…å­˜åœ¨]");
+                            player.sendMessage(ChatColor.GREEN + "é‚£ä¹ˆè¯·æ‚¨é‡æ–°è¾“å…¥" + ChatColor.AQUA + " /cshop upload playerdata" + ChatColor.GREEN + "æ¥æ‰§è¡Œä¸Šä¼ ");
                             player.sendMessage(ChatColor.GREEN + "=============CustomShop=============");
                             safetyLock2.add(pName);
                         } else {
                             safetyLock2.remove(pName);
                             if (enableMySQL) {
                                 upLoadPlayerData();
-                                player.sendMessage(ChatColor.GREEN + "ÉÏ´«Íê±Ï£¡");
-                            } else player.sendMessage(ChatColor.RED + "Äú²¢Ã»ÓÐ¿ªÆôÊý¾Ý¿âÆôÓÃÑ¡Ïî£¡");
+                                player.sendMessage(ChatColor.GREEN + "ä¸Šä¼ å®Œæ¯•ï¼");
+                            } else player.sendMessage(ChatColor.RED + "æ‚¨å¹¶æ²¡æœ‰å¼€å¯æ•°æ®åº“å¯ç”¨é€‰é¡¹ï¼");
                         }
                     }
-                }else if(args.length == 1 && args[0].equalsIgnoreCase("download")){
-                    if(!player.isOp()) return true;
+                } else if (args.length == 1 && args[0].equalsIgnoreCase("download")) {
+                    if (!player.isOp()) return true;
                     csb.allPut();
                 }
-            }else{
-                if(!sender.isOp()) return true;
-                if(args.length == 3 && args[0].equalsIgnoreCase("open")){
+            } else {
+                if (!sender.isOp()) return true;
+                if (args.length == 3 && args[0].equalsIgnoreCase("open")) {
                     Player player = Bukkit.getPlayer(args[2]);
-                    if(player == null) return true;
-                    openShop(player,args[1]);
-                }else if(args.length == 4 && args[0].equalsIgnoreCase("givecost")){
-                    String msg = giveCost(args[1],args[2],Integer.parseInt(args[3]));
-                    if(msg == null) return true;
+                    if (player == null) return true;
+                    openShop(player, args[1]);
+                } else if (args.length == 4 && args[0].equalsIgnoreCase("givecost")) {
+                    String msg = giveCost(args[1], args[2], Integer.parseInt(args[3]));
+                    if (msg == null) return true;
                     sender.sendMessage(msg);
-                }else if(args.length == 4 && args[0].equalsIgnoreCase("takecost")){
-                    String msg = delCost(args[1],args[2],Integer.parseInt(args[3]));
-                    if(msg == null) return true;
+                } else if (args.length == 4 && args[0].equalsIgnoreCase("takecost")) {
+                    String msg = delCost(args[1], args[2], Integer.parseInt(args[3]));
+                    if (msg == null) return true;
                     sender.sendMessage(msg);
                 }
-                if(args.length >= 2 && args[0].equalsIgnoreCase("cost")){
-                    if(sender.isOp()) {
-                        if(args[1].equalsIgnoreCase("create") && args.length == 4){
-                            if(createCost(args[2],args[3])){
+                if (args.length >= 2 && args[0].equalsIgnoreCase("cost")) {
+                    if (sender.isOp()) {
+                        if (args[1].equalsIgnoreCase("create") && args.length == 4) {
+                            if (createCost(args[2], args[3])) {
                                 sender.sendMessage(langMap.get("CostCreate"));
-                            }else sender.sendMessage(langMap.get("CostCreateNull"));
-                        }else if(args[1].equalsIgnoreCase("delete") && args.length == 4){
-                            if(deleteCost(args[2],Boolean.getBoolean(args[3]))){
+                            } else sender.sendMessage(langMap.get("CostCreateNull"));
+                        } else if (args[1].equalsIgnoreCase("delete") && args.length == 4) {
+                            if (deleteCost(args[2], Boolean.getBoolean(args[3]))) {
                                 sender.sendMessage(langMap.get("CostDelete"));
-                            }else sender.sendMessage(langMap.get("CostDeleteNull"));
-                        }else if(args[1].equalsIgnoreCase("clear") && args.length == 3){
+                            } else sender.sendMessage(langMap.get("CostDeleteNull"));
+                        } else if (args[1].equalsIgnoreCase("clear") && args.length == 3) {
                             clearCost(args[2]);
                             sender.sendMessage(langMap.get("CostClear"));
-                        }else if(args[1].equalsIgnoreCase("rename") && args.length == 4){
-                            if(renameCost(args[2],args[3])){
+                        } else if (args[1].equalsIgnoreCase("rename") && args.length == 4) {
+                            if (renameCost(args[2], args[3])) {
                                 sender.sendMessage(langMap.get("CostRename"));
-                            }else sender.sendMessage(langMap.get("CostRenameNull"));
-                        }else if(args[1].equalsIgnoreCase("list")){
+                            } else sender.sendMessage(langMap.get("CostRenameNull"));
+                        } else if (args[1].equalsIgnoreCase("list")) {
                             sendCostList(sender);
                         }
                     }
@@ -316,20 +329,21 @@ public final class CustomShop extends JavaPlugin {
         saveData();
         saveShops();
         saveRefresh();
-        if(enableMySQL){
-            for(Player player:Bukkit.getOnlinePlayers()){
+        if (enableMySQL) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
                 String pName = player.getName();
-                HashMap<String,Integer> data = playerData.getOrDefault(pName,new HashMap<>());
+                HashMap<String, Integer> data = playerData.getOrDefault(pName, new HashMap<>());
                 csb.deletePlayerData(pName);
-                csb.insertData(pName,data);
+                csb.insertData(pName, data);
             }
             csb.closeConnectionQuietly();
         }
     }
-    private void setupEconomy(){
+
+    private void setupEconomy() {
         RegisteredServiceProvider economyProvider = getServer().getServicesManager().getRegistration(Economy.class);
         if (economyProvider != null) {
-            economy = ((Economy)economyProvider.getProvider());
+            economy = ((Economy) economyProvider.getProvider());
         }
     }
 }

@@ -1,32 +1,98 @@
-apply plugin: 'java'
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm' version '1.7.10'
+    id 'maven-publish'
+    id 'org.jetbrains.dokka' version "1.7.10"
+}
 
-group = pluginGroup
-version = pluginVersion
+group = 'com.killercraft.jimy'
+version = '1.3.3-alpha-dev-1'
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+processResources {
+    def props = [version: version]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
+    }
+    from('src/main/java') {
+        include '**/*.xml'
+    }
+    from('src/main/kotlin') {
+        include '**/*.xml'
+    }
+}
 
 repositories {
+    mavenLocal()
+    maven {
+        url "http://maven.wcpe.top/repository/maven-public/"
+        allowInsecureProtocol = true
+    }
     mavenCentral()
-    maven {
-        name = 'spigotmc-repo'
-        url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
-    }
-    maven {
-        name = 'sonatype'
-        url = 'https://oss.sonatype.org/content/groups/public/'
-    }
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-    compileOnly 'org.spigotmc:spigot-api:1.12-R0.1-SNAPSHOT'
+    implementation "org.spigotmc:spigot:1.12.2"
+    implementation "org.black_ixx:PlayerPoints:2.1.3"
+    implementation "me.clip:placeholderapi:2.10.4"
+    implementation "com.github.MilkBowl:VaultAPI:1.7"
+    implementation 'com.comphenix.protocol:ProtocolLib:4.7.0@jar'
+
+    compileOnly 'org.projectlombok:lombok:1.18.24'
+    annotationProcessor 'org.projectlombok:lombok:1.18.24'
+    testCompileOnly 'org.projectlombok:lombok:1.18.24'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
+
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib'
+    testImplementation 'org.jetbrains.kotlin:kotlin-test'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 }
 
-import org.apache.tools.ant.filters.ReplaceTokens
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
 
-processResources {
-    from(sourceSets.main.resources.srcDirs) {
-        filter ReplaceTokens, tokens: [version: version]
+test {
+    useJUnitPlatform()
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = '1.8'
+}
+
+compileTestKotlin {
+    kotlinOptions.jvmTarget = '1.8'
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allSource
+    archiveClassifier = 'sources'
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+
+            groupId project.group
+            artifactId project.name
+            version project.version
+            from components.java
+            artifact sourcesJar
+        }
+    }
+    repositories {
+        maven {
+            credentials {
+                allowInsecureProtocol = true
+                username = project.findProperty("username").toString()
+                password = project.findProperty("password").toString()
+            }
+            def releasesRepoUrl = "http://maven.wcpe.top/repository/maven-releases/"
+            def snapshotsRepoUrl = "http://maven.wcpe.top/repository/maven-snapshots/"
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+        }
     }
 }
