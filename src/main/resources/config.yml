@@ -11,6 +11,7 @@ Costs:
   biggold: '&6大金币'
   kill: '&c击杀点数'
 Lang:
+  inventory-full: "背包已满 清先清理"
   CostLore: '&a使用后获得: '
   PlayerCost: '&a您当前拥有 <cost> &a的数量为 &b<value> &a！'
   SplitString: '&8购买此商品需要以下条件'

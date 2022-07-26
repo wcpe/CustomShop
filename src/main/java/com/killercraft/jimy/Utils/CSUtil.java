@@ -17,6 +17,7 @@ import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitScheduler;
+import top.wcpe.customshop.util.InventoryUtil;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -485,6 +486,10 @@ public class CSUtil {
     }
 
     public static void clickShop(String title, Player player, int slot) {
+        if (InventoryUtil.getContentsEmptySlot(player.getInventory()) < 1) {
+            player.sendMessage(langMap.get("inventory-full"));
+            return;
+        }
         if (!enableMySQL) {
             GuiShop gs = customShops.get(title);
             HashMap<Integer, ItemStack> items = gs.getItems();
