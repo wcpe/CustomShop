@@ -640,17 +640,19 @@ public class CSUtil {
                                         takePlayerKeyLimit(player.getName(), setting[2], 1);
                                     }
                                 } else if (setting[1].equals("cmd")) {
-                                    if (setting[2].equals("c")) {
-                                        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), setting[3].replace("<player>", player.getName()).replace("<uuid>", player.getUniqueId().toString()));
-                                    } else if (setting[2].equals("p")) {
-                                        player.chat("/" + setting[3].replace("<player>", player.getName()).replace("<uuid>", player.getUniqueId().toString()));
-                                    } else if (setting[2].equals("o")) {
-                                        player.setOp(true);
-                                        try {
+                                    if (!noLimit) {
+                                        if (setting[2].equals("c")) {
+                                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), setting[3].replace("<player>", player.getName()).replace("<uuid>", player.getUniqueId().toString()));
+                                        } else if (setting[2].equals("p")) {
                                             player.chat("/" + setting[3].replace("<player>", player.getName()).replace("<uuid>", player.getUniqueId().toString()));
-                                        } catch (Throwable ignored) {
+                                        } else if (setting[2].equals("o")) {
+                                            player.setOp(true);
+                                            try {
+                                                player.chat("/" + setting[3].replace("<player>", player.getName()).replace("<uuid>", player.getUniqueId().toString()));
+                                            } catch (Throwable ignored) {
+                                            }
+                                            player.setOp(false);
                                         }
-                                        player.setOp(false);
                                     }
                                 } else if (setting[1].equals("take")) {
                                     take = true;
