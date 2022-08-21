@@ -2,11 +2,8 @@ package com.killercraft.jimy;
 
 import com.killercraft.jimy.Listeners.CSInvListener;
 import com.killercraft.jimy.Listeners.CSItemUseListener;
-import com.killercraft.jimy.Listeners.CSPlayerListener;
 import com.killercraft.jimy.Manager.CSPAPIHooker;
 import com.killercraft.jimy.Manager.GuiShop;
-import com.killercraft.jimy.MySQL.CustomShopDatabase;
-import com.killercraft.jimy.MySQL.CustomShopSQLUpdate;
 import com.killercraft.jimy.Runnables.CSInvCooldown;
 import com.killercraft.jimy.Runnables.CSSaveDataRunnable;
 import com.killercraft.jimy.Utils.CSUtil;
@@ -29,7 +26,6 @@ import java.util.HashSet;
 import static com.killercraft.jimy.ConfigManager.CSConfig.update;
 import static com.killercraft.jimy.ConfigManager.CSDataUtil.*;
 import static com.killercraft.jimy.CustomShopAPI.*;
-import static com.killercraft.jimy.MySQL.CustomShopDatabase.enableMySQL;
 import static com.killercraft.jimy.Utils.CSCostUtil.delCost;
 import static com.killercraft.jimy.Utils.CSCostUtil.giveCost;
 import static com.killercraft.jimy.Utils.CSUtil.*;
@@ -38,7 +34,6 @@ public final class CustomShop extends JavaPlugin {
     private static final HashSet<String> safetyLock = new HashSet<>();
     private static final HashSet<String> safetyLock2 = new HashSet<>();
     public static String root;
-    public static CustomShopDatabase csb;
     public static Economy economy;
     public static PlayerPointsAPI poi;
     public static boolean poiLoad;
@@ -80,11 +75,9 @@ public final class CustomShop extends JavaPlugin {
         saveDefaultConfig();
         update();
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, new CSSaveDataRunnable(), 6000, 6000);
-        Bukkit.getScheduler().runTaskTimerAsynchronously(this, new CustomShopSQLUpdate(), 40, 400);
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, new CSInvCooldown(), 2, 2);
         Bukkit.getPluginManager().registerEvents(new CSInvListener(), this);
         Bukkit.getPluginManager().registerEvents(new CSItemUseListener(), this);
-        Bukkit.getPluginManager().registerEvents(new CSPlayerListener(), this);
     }
 
     @Override
@@ -138,7 +131,6 @@ public final class CustomShop extends JavaPlugin {
                     }
                     sendList(player, args[1]);
                 } else if (args.length == 2 && args[0].equalsIgnoreCase("open")) {
-                    //openShop(player,args[1]);
                     if (player.hasPermission("customshop.open." + args[1])) {
                         openShop(player, args[1]);
                     } else {
@@ -251,10 +243,6 @@ public final class CustomShop extends JavaPlugin {
                             safetyLock.add(pName);
                         } else {
                             safetyLock.remove(pName);
-                            if (enableMySQL) {
-                                upLoadShopCostData();
-                                player.sendMessage(ChatColor.GREEN + "上传完毕！");
-                            } else player.sendMessage(ChatColor.RED + "您并没有开启数据库启用选项！");
                         }
                     } else if (args[1].equalsIgnoreCase("playerdata")) {
                         if (!safetyLock2.contains(pName)) {
@@ -272,15 +260,10 @@ public final class CustomShop extends JavaPlugin {
                             safetyLock2.add(pName);
                         } else {
                             safetyLock2.remove(pName);
-                            if (enableMySQL) {
-                                upLoadPlayerData();
-                                player.sendMessage(ChatColor.GREEN + "上传完毕！");
-                            } else player.sendMessage(ChatColor.RED + "您并没有开启数据库启用选项！");
                         }
                     }
                 } else if (args.length == 1 && args[0].equalsIgnoreCase("download")) {
                     if (!player.isOp()) return true;
-                    csb.allPut();
                 }
             } else {
                 if (!sender.isOp()) return true;
@@ -329,21 +312,12 @@ public final class CustomShop extends JavaPlugin {
         saveData();
         saveShops();
         saveRefresh();
-        if (enableMySQL) {
-            for (Player player : Bukkit.getOnlinePlayers()) {
-                String pName = player.getName();
-                HashMap<String, Integer> data = playerData.getOrDefault(pName, new HashMap<>());
-                csb.deletePlayerData(pName);
-                csb.insertData(pName, data);
-            }
-            csb.closeConnectionQuietly();
-        }
     }
 
     private void setupEconomy() {
-        RegisteredServiceProvider economyProvider = getServer().getServicesManager().getRegistration(Economy.class);
+        RegisteredServiceProvider<Economy> economyProvider = getServer().getServicesManager().getRegistration(Economy.class);
         if (economyProvider != null) {
-            economy = ((Economy) economyProvider.getProvider());
+            economy = economyProvider.getProvider();
         }
     }
 }

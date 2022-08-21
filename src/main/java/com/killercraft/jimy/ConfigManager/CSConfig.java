@@ -1,7 +1,6 @@
 package com.killercraft.jimy.ConfigManager;
 
 import com.killercraft.jimy.CustomShop;
-import com.killercraft.jimy.MySQL.CustomShopDatabase;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -9,13 +8,11 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.HashMap;
 
 import static com.killercraft.jimy.ConfigManager.CSDataUtil.*;
 import static com.killercraft.jimy.CustomShop.*;
-import static com.killercraft.jimy.MySQL.CustomShopDatabase.enableMySQL;
 
 public class CSConfig {
     public static void update() {
@@ -60,31 +57,10 @@ public class CSConfig {
             costMap.put(temp, costs.getString(temp).replace('&', ChatColor.COLOR_CHAR));
         }
         day = Calendar.getInstance().get(Calendar.DAY_OF_YEAR);
-        enableMySQL = config.getBoolean("MySQL");
-        if (enableMySQL) {
-            csb = new CustomShopDatabase();
-            csb.host = config.getString("MySQLHost");
-            csb.port = config.getString("MySQLPort");
-            csb.username = config.getString("MySQLUsername");
-            csb.password = config.getString("MySQLPassword");
-            csb.databaseName = config.getString("MySQLDatabase");
-            csb.useSSL = config.getBoolean("MySQLUseSSL");
-            try {
-                if (csb.getConnection() == null) enableMySQL = false;
-                csb.createCostsTable();
-                csb.createPlayerDataTable();
-                csb.createRefreshTable();
-                csb.createShopsTable();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                enableMySQL = false;
-            }
-        } else {
-            loadData();
-            loadShops();
-            loadRefresh();
-            loadLimits();
-        }
+        loadData();
+        loadShops();
+        loadRefresh();
+        loadLimits();
     }
 
     public static FileConfiguration load(File file) {
