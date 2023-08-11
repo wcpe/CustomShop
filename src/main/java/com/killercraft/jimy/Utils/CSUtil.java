@@ -219,6 +219,9 @@ public class CSUtil {
                         } else if (buy[1].equals("item")) {
                             isBuy = checkItemNeed(buy[2], Integer.parseInt(buy[3]), player);
                             takeList.add(lore);
+                        } else if (buy[1].equals("item_contains_name")) {
+                            isBuy = checkItemContainsNameNeed(buy[2], Integer.parseInt(buy[3]), player);
+                            takeList.add(lore);
                         } else if (buy[1].equalsIgnoreCase("item_lore")) {
                             isBuy = checkItemAndLoreNeed(buy[2], buy[4], Integer.parseInt(buy[3]), player);
                             takeList.add(lore);
@@ -372,7 +375,9 @@ public class CSUtil {
                             } else if (buy[1].equals("point")) {
                                 takePointNeed(Integer.parseInt(buy[2]), player);
                             } else if (buy[1].equals("item")) {
-                                takeItemNeed(buy[2], Integer.parseInt(buy[3]), player);
+                                takeItemNeed(buy[2], Integer.parseInt(buy[3]), player, false);
+                            } else if (buy[1].equals("item_contains_name")) {
+                                takeItemNeed(buy[2], Integer.parseInt(buy[3]), player, true);
                             } else if (buy[1].equals("item_lore")) {
                                 takeItemAndLoreNeed(buy[2], buy[4], Integer.parseInt(buy[3]), player);
                             } else if (buy[1].equals("lore")) {
