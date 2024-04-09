@@ -19,7 +19,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
+import top.wcpe.customshop.PurchaseLimit;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -37,7 +39,6 @@ public final class CustomShop extends JavaPlugin {
     public static Economy economy;
     public static PlayerPointsAPI poi;
     public static boolean poiLoad;
-    public static Plugin plugin;
     public static HashSet<Player> editSet = new HashSet<>();
     public static HashSet<String> cancelSet = new HashSet<>();
     public static HashMap<Player, Integer> invClickCooldownMap = new HashMap<>();
@@ -49,9 +50,30 @@ public final class CustomShop extends JavaPlugin {
     public static HashMap<String, HashMap<String, Integer>> limitData = new HashMap<>();
     public static int day;
 
+
+    private static CustomShop instance;
+
+    public static CustomShop getInstance() {
+        return instance;
+    }
+
+    private PurchaseLimit purchaseLimit = null;
+
+    public PurchaseLimit getPurchaseLimit() {
+        return purchaseLimit;
+    }
+
+    @Override
+    public void onLoad() {
+        instance = this;
+        root = getDataFolder().getAbsolutePath();
+        File file = new File(CustomShop.root, "purchase-limit.yml");
+        purchaseLimit = new PurchaseLimit(file);
+    }
+
+
     @Override
     public void onEnable() {
-        plugin = Bukkit.getPluginManager().getPlugin("CustomShop");
         Plugin papi = Bukkit.getPluginManager().getPlugin("PlaceholderAPI");
         if (papi != null) {
             boolean isLoadPAPI = new CSPAPIHooker().register();
@@ -61,7 +83,7 @@ public final class CustomShop extends JavaPlugin {
                 System.out.println("[CustomShop]Placeholder API Unloaded!");
             }
         }
-        root = getDataFolder().getAbsolutePath();
+
         setupEconomy();
         PlayerPoints points = (PlayerPoints) Bukkit.getPluginManager().getPlugin("PlayerPoints");
         if (points != null) {
@@ -176,30 +198,7 @@ public final class CustomShop extends JavaPlugin {
             } else if (args.length == 1 && args[0].equalsIgnoreCase("costs")) {
                 sendCosts(player);
             } else if (args.length >= 2 && args[0].equalsIgnoreCase("cost")) {
-                if (player.isOp()) {
-                    if (args[1].equalsIgnoreCase("create") && args.length == 4) {
-                        if (createCost(args[2], args[3])) {
-                            player.sendMessage(langMap.get("CostCreate"));
-                        } else {
-                            player.sendMessage(langMap.get("CostCreateNull"));
-                        }
-                    } else if (args[1].equalsIgnoreCase("delete") && args.length == 4) {
-                        if (deleteCost(args[2], Boolean.getBoolean(args[3]))) {
-                            player.sendMessage(langMap.get("CostDelete"));
-                        } else {
-                            player.sendMessage(langMap.get("CostDeleteNull"));
-                        }
-                    } else if (args[1].equalsIgnoreCase("clear") && args.length == 3) {
-                        clearCost(args[2]);
-                        player.sendMessage(langMap.get("CostClear"));
-                    } else if (args[1].equalsIgnoreCase("rename") && args.length == 4) {
-                        if (renameCost(args[2], args[3])) {
-                            player.sendMessage(langMap.get("CostRename"));
-                        } else player.sendMessage(langMap.get("CostRenameNull"));
-                    } else if (args[1].equalsIgnoreCase("list")) {
-                        sendCostList(player);
-                    }
-                }
+                onCommand0(player, args);
             } else if (args.length == 1 && args[0].equalsIgnoreCase("editmode")) {
                 if (!player.isOp()) return true;
                 if (editSet.contains(player)) {
@@ -283,30 +282,34 @@ public final class CustomShop extends JavaPlugin {
                 sender.sendMessage(msg);
             }
             if (args.length >= 2 && args[0].equalsIgnoreCase("cost")) {
-                if (sender.isOp()) {
-                    if (args[1].equalsIgnoreCase("create") && args.length == 4) {
-                        if (createCost(args[2], args[3])) {
-                            sender.sendMessage(langMap.get("CostCreate"));
-                        } else sender.sendMessage(langMap.get("CostCreateNull"));
-                    } else if (args[1].equalsIgnoreCase("delete") && args.length == 4) {
-                        if (deleteCost(args[2], Boolean.getBoolean(args[3]))) {
-                            sender.sendMessage(langMap.get("CostDelete"));
-                        } else sender.sendMessage(langMap.get("CostDeleteNull"));
-                    } else if (args[1].equalsIgnoreCase("clear") && args.length == 3) {
-                        clearCost(args[2]);
-                        sender.sendMessage(langMap.get("CostClear"));
-                    } else if (args[1].equalsIgnoreCase("rename") && args.length == 4) {
-                        if (renameCost(args[2], args[3])) {
-                            sender.sendMessage(langMap.get("CostRename"));
-                        } else sender.sendMessage(langMap.get("CostRenameNull"));
-                    } else if (args[1].equalsIgnoreCase("list")) {
-                        sendCostList(sender);
-                    }
-                }
+                onCommand0(sender, args);
             }
         }
 
         return true;
+    }
+
+    public void onCommand0(CommandSender sender, String[] args) {
+        if (sender.isOp()) {
+            if (args[1].equalsIgnoreCase("create") && args.length == 4) {
+                if (createCost(args[2], args[3])) {
+                    sender.sendMessage(langMap.get("CostCreate"));
+                } else sender.sendMessage(langMap.get("CostCreateNull"));
+            } else if (args[1].equalsIgnoreCase("delete") && args.length == 4) {
+                if (deleteCost(args[2], Boolean.getBoolean(args[3]))) {
+                    sender.sendMessage(langMap.get("CostDelete"));
+                } else sender.sendMessage(langMap.get("CostDeleteNull"));
+            } else if (args[1].equalsIgnoreCase("clear") && args.length == 3) {
+                clearCost(args[2]);
+                sender.sendMessage(langMap.get("CostClear"));
+            } else if (args[1].equalsIgnoreCase("rename") && args.length == 4) {
+                if (renameCost(args[2], args[3])) {
+                    sender.sendMessage(langMap.get("CostRename"));
+                } else sender.sendMessage(langMap.get("CostRenameNull"));
+            } else if (args[1].equalsIgnoreCase("list")) {
+                sendCostList(sender);
+            }
+        }
     }
 
     @Override

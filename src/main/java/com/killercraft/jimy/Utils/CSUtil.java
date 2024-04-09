@@ -1,5 +1,6 @@
 package com.killercraft.jimy.Utils;
 
+import com.killercraft.jimy.CustomShop;
 import com.killercraft.jimy.Manager.GuiShop;
 import com.killercraft.jimy.Utils.nms.CSHelper;
 import me.clip.placeholderapi.PlaceholderAPI;
@@ -10,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import top.wcpe.customshop.PurchaseLimit;
 import top.wcpe.customshop.util.InventoryUtil;
 
 import java.util.ArrayList;
@@ -90,7 +92,7 @@ public class CSUtil {
     /**
      * 如果需要，刷新商店
      *
-     * @param guiShop       商店对象
+     * @param guiShop  商店对象
      * @param shopName 商店名称
      */
     private static void refreshShopIfNeeded(GuiShop guiShop, String shopName) {
@@ -297,6 +299,18 @@ public class CSUtil {
                             noLimit = true;
                         } else {
                             takePlayerKeyLimit(player.getName(), setting[2], 1);
+                        }
+                        break;
+                    case "player_week_limit":
+                        player.closeInventory();
+                        PurchaseLimit purchaseLimit = getInstance().getPurchaseLimit();
+                        int number = Integer.parseInt(setting[3]) - purchaseLimit.getPurchaseLimit(player.getName(), setting[2], PurchaseLimit.LimitType.WEEKLY);
+                        if (number <= 0) {
+                            player.sendMessage(langMap.get("NoStock"));
+                            take = true;
+                            noLimit = true;
+                        } else {
+                            purchaseLimit.addPurchaseRecord(player.getName(), setting[2]);
                         }
                         break;
                     case "cmd":

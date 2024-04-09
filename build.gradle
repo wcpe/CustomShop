@@ -85,7 +85,7 @@ publishing {
                 password = project.findProperty("password").toString()
             }
             def releasesRepoUrl = "https://maven.wcpe.top/repository/maven-releases/"
-            def snapshotsRepoUrl = "https://maven.wcpe.top/repository/maven-snapshots/"
+            def snapshotsRepoUrl = "https'://maven.wcpe.top/repository/maven-snapshots/"
             url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
         }
     }
