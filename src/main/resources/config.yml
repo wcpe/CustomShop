@@ -13,6 +13,7 @@ Lang:
   ItemString: '&7>> &c物品&7[<item>&7]: &b<value> &c个'
   LoreString: '&7>> &c物品类型&7[<lore>&7]: &b<value> &c个'
   IdString: '&7>> &c货币&7[<item>&7]: &b<value> &c个'
+  ItemIdString: '&7>> &c顶针&7[<item>&7]: &b<value> &c个'
   PermString: '&7>> &c达成条件&7[<perm>&7]！'
   CostString: '&7>> <cost>: &b<value>'
   InvCheckString: '&7>> &c背包剩余&7[<value>&7]空格'

@@ -1,6 +1,5 @@
 package com.killercraft.jimy.Utils;
 
-import com.killercraft.jimy.CustomShop;
 import com.killercraft.jimy.Manager.GuiShop;
 import com.killercraft.jimy.Utils.nms.CSHelper;
 import me.clip.placeholderapi.PlaceholderAPI;
@@ -365,6 +364,16 @@ public class CSUtil {
                     case "cost":
                         takeCostNeed(buy[2], Integer.parseInt(buy[3]), player);
                         break;
+                    case "item_id":
+                        if (buy[2].contains(":")) {
+                            String[] ds = buy[2].split(":");
+                            int ids = Integer.parseInt(ds[0]);
+                            int durs = Integer.parseInt(ds[1]);
+                            takeOnlyIdNeed(ids, durs, Integer.parseInt(buy[4]), player);
+                        } else {
+                            takeOnlyIdNeed(Integer.parseInt(buy[2]), -1, Integer.parseInt(buy[4]), player);
+                        }
+                        break;
                     case "id":
                         if (buy[2].contains(":")) {
                             String[] ds = buy[2].split(":");
@@ -424,6 +433,16 @@ public class CSUtil {
                     takeList.add(lore);
                 } else if (buy[1].equals("cost")) {
                     isBuy = checkCostNeed(buy[2], Integer.parseInt(buy[3]), player);
+                    takeList.add(lore);
+                } else if (buy[1].equals("item_id")) {
+                    if (buy[2].contains(":")) {
+                        String[] ds = buy[2].split(":");
+                        int ids = Integer.parseInt(ds[0]);
+                        int durs = Integer.parseInt(ds[1]);
+                        isBuy = checkOnlyIdNeed(ids, durs, Integer.parseInt(buy[4]), player);
+                    } else {
+                        isBuy = checkOnlyIdNeed(Integer.parseInt(buy[2]), -1, Integer.parseInt(buy[4]), player);
+                    }
                     takeList.add(lore);
                 } else if (buy[1].equals("id")) {
                     if (buy[2].contains(":")) {
